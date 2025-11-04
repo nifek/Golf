@@ -134,7 +134,7 @@ private struct LoginForm: View {
     }
 }
 
-private struct LogoView: View {
+struct LogoView: View {
     var body: some View {
         VStack(spacing: 10) {
             ZStack {
