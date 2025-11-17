@@ -7,8 +7,12 @@ struct LevelsView: View {
         List {
             Section(header: listHeader) {
                 ForEach(appState.levels) { level in
-                    LevelRow(level: level)
-                        .listRowBackground(Theme.surface.opacity(0.4))
+                    NavigationLink(destination: LevelPlayView(level: level)) {
+                        LevelRow(level: level)
+                    }
+                    .disabled(level.isLocked || level.resourceName == nil)
+                    .listRowBackground(Theme.surface.opacity(0.4))
+                    .opacity(level.isLocked ? 0.6 : 1)
                 }
             }
         }
