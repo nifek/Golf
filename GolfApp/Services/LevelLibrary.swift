@@ -18,7 +18,7 @@ enum LevelLibraryError: LocalizedError {
 }
 
 struct LevelLibrary {
-    private let levelDirectory = "Levels"
+    private let levelDirectory = "../Levels"
     private let levelFileExtension = "json"
     private let decoder = JSONDecoder()
 
@@ -61,8 +61,7 @@ struct LevelLibrary {
     func loadDefinition(named resourceName: String) throws -> LevelDefinition {
         guard let url = Bundle.main.url(
             forResource: resourceName,
-            withExtension: levelFileExtension,
-            subdirectory: levelDirectory
+            withExtension: levelFileExtension
         ) else {
             throw LevelLibraryError.missingResource(
                 "Could not locate \(resourceName).\(levelFileExtension) in \(levelDirectory)/."
@@ -82,5 +81,3 @@ struct LevelLibrary {
         }
     }
 }
-
-
