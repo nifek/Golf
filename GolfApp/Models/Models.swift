@@ -12,6 +12,7 @@ struct Level: Identifiable, Hashable {
     var difficulty: String
     var stars: Int
     var isLocked: Bool
+    var resourceName: String?
 }
 
 struct ShopItem: Identifiable, Hashable {
@@ -32,11 +33,11 @@ struct LeaderboardEntry: Identifiable, Hashable {
 extension Level {
     static func samples() -> [Level] {
         [
-            Level(id: 1, name: "Level 1", difficulty: "Easy", stars: 3, isLocked: false),
-            Level(id: 2, name: "Level 2", difficulty: "Medium", stars: 2, isLocked: false),
-            Level(id: 3, name: "Level 3", difficulty: "Hard", stars: 0, isLocked: true),
-            Level(id: 4, name: "Level 4", difficulty: "?", stars: 0, isLocked: true),
-            Level(id: 5, name: "Level 5", difficulty: "?", stars: 0, isLocked: true)
+            Level(id: 1, name: "Level 1", difficulty: "Easy", stars: 3, isLocked: false, resourceName: "level_1"),
+            Level(id: 2, name: "Level 2", difficulty: "Medium", stars: 2, isLocked: false, resourceName: "level_2"),
+            Level(id: 3, name: "Level 3", difficulty: "Hard", stars: 0, isLocked: true, resourceName: "level_3"),
+            Level(id: 4, name: "Level 4", difficulty: "?", stars: 0, isLocked: true, resourceName: "level_4"),
+            Level(id: 5, name: "Level 5", difficulty: "?", stars: 0, isLocked: true, resourceName: "level_5")
         ]
     }
 }
