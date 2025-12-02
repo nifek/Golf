@@ -53,6 +53,8 @@ def save_level(filename="MyLevel.json"):
     print(f"Saving level to {filename}...")
     level_data = {
         "levelName": "My New Level",
+        "maxStrikesForOneStar": 5,
+        "maxStrikesForTwoStars": 3,
         "playerStartPosition": to_spritekit_coords(player_pos),
         "hole": {
             "position": to_spritekit_coords(hole_pos),

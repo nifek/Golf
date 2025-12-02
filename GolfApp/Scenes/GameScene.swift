@@ -27,6 +27,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     private var strokeLabel: SKLabelNode?
+    
+    var onLevelComplete: ((Int) -> Void)?
 
     init(level: LevelDefinition) {
         self.level = level
@@ -279,7 +281,20 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let shrink = SKAction.scale(to: 0.1, duration: 0.35)
         let fade = SKAction.fadeOut(withDuration: 0.35)
         let group = SKAction.group([shrink, fade])
+        
+        let stars = calculateStars()
+        onLevelComplete?(stars)
+        
         ball.run(group)
+    }
+    
+    private func calculateStars() -> Int {
+        if strokes <= level.maxStrikesForTwoStars {
+            return 2 // Or 3 if we want to support 3 stars later, but spec said 2 values
+        } else if strokes <= level.maxStrikesForOneStar {
+            return 1
+        }
+        return 0
     }
 }
 

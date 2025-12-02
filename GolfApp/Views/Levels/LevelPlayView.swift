@@ -2,6 +2,7 @@ import SpriteKit
 import SwiftUI
 
 struct LevelPlayView: View {
+    @EnvironmentObject var appState: AppState
     let level: Level
 
     @State private var scene: GameScene?
@@ -69,6 +70,11 @@ struct LevelPlayView: View {
                 }
             }
             scene = GameScene(level: definition)
+            scene?.onLevelComplete = { stars in
+                Task { @MainActor in
+                    appState.updateStars(for: level.id, stars: stars)
+                }
+            }
         } catch {
             loadError = error.localizedDescription
         }

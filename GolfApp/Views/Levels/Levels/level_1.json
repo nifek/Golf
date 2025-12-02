@@ -1,5 +1,7 @@
 {
   "levelName": "Generated Level",
+  "maxStrikesForOneStar": 5,
+  "maxStrikesForTwoStars": 3,
   "playerStartPosition": {
     "x": -319.5341683524109,
     "y": -145.0208898498837

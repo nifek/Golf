@@ -25,6 +25,8 @@ struct LevelDefinition: Codable, Hashable {
     let playerStartPosition: LevelVector
     let hole: Hole
     let terrain: [TerrainPolygon]
+    let maxStrikesForOneStar: Int
+    let maxStrikesForTwoStars: Int
 }
 
 extension TerrainPolygon {
