@@ -18,9 +18,11 @@ struct LevelPlayView: View {
                         .ignoresSafeArea(edges: .all)
                     
                     if let completedStars {
-                        LevelCompleteOverlay(stars: completedStars) {
+                        LevelCompleteOverlay(stars: completedStars, onDismiss: {
                             self.completedStars = nil
-                        }
+                        }, onGoToMenu: {
+                            self.completedStars = nil
+                        })
                     }
                 }
             } else if let loadError {
@@ -50,6 +52,7 @@ struct LevelPlayView: View {
         }
         .navigationTitle(level.name)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(completedStars != nil)
         .task {
             await loadSceneIfNeeded()
         }
@@ -96,14 +99,13 @@ struct LevelPlayView: View {
 private struct LevelCompleteOverlay: View {
     let stars: Int
     let onDismiss: () -> Void
+    let onGoToMenu: () -> Void
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
             Color.black.opacity(0.7)
                 .ignoresSafeArea()
-                .onTapGesture {
-                    onDismiss()
-                }
             
             VStack(spacing: 24) {
                 Text("Level Complete!")
@@ -121,11 +123,25 @@ private struct LevelCompleteOverlay: View {
                 }
                 .padding(.vertical, 8)
                 
-                Button("Continue") {
-                    onDismiss()
+                VStack(spacing: 12) {
+                    Button("Go to Menu") {
+                        onGoToMenu()
+                        // Dismiss twice to go back to menu (LevelPlayView -> LevelsView -> MainMenuView)
+                        Task { @MainActor in
+                            dismiss()
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                            dismiss()
+                        }
+                    }
+                    .buttonStyle(FilledButtonStyle())
+                    .frame(width: 200)
+                    
+                    Button("Continue") {
+                        onDismiss()
+                    }
+                    .buttonStyle(FilledButtonStyle(color: Theme.surface))
+                    .frame(width: 200)
                 }
-                .buttonStyle(FilledButtonStyle())
-                .frame(width: 200)
             }
             .padding(32)
             .background(
