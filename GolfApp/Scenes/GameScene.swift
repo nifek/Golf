@@ -20,6 +20,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var aimLine: SKShapeNode?
     private var dragStartPoint: CGPoint?
     private var sceneIsConfigured = false
+    
+    private var strokes = 0 {
+        didSet {
+            strokeLabel?.text = "Strikes: \(strokes)"
+        }
+    }
+    private var strokeLabel: SKLabelNode?
 
     init(level: LevelDefinition) {
         self.level = level
@@ -45,6 +52,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if sceneIsConfigured {
             updateBackgroundSize()
             updateWorldBoundsBody()
+            strokeLabel?.position = CGPoint(x: 0, y: size.height / 2 - 60)
         }
     }
 
@@ -52,6 +60,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         guard !sceneIsConfigured else { return }
         removeAllChildren()
         terrainNodes.removeAll()
+        strokes = 0
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
         setupBackground()
@@ -59,7 +68,21 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         setupHole()
         setupTerrain()
         setupBall()
+        setupHUD()
         sceneIsConfigured = true
+    }
+
+    private func setupHUD() {
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = "Strikes: \(strokes)"
+        label.fontSize = 32
+        label.fontColor = .white
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .top
+        label.position = CGPoint(x: 0, y: size.height / 2 - 60) // Padding from top
+        label.zPosition = 100
+        addChild(label)
+        strokeLabel = label
     }
 
     private func setupBackground() {
@@ -200,6 +223,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
         if impulse.magnitude > 1 {
             body.applyImpulse(impulse)
+            strokes += 1
         }
 
         self.dragStartPoint = nil
