@@ -37,6 +37,7 @@ grid_size = DEFAULT_GRID_SIZE
 # --- LEVEL CONFIG ---
 level_number = None
 level_name = None
+max_strikes_for_three_stars = None
 max_strikes_for_two_stars = None
 max_strikes_for_one_star = None
 level_folder_path = None
@@ -52,7 +53,7 @@ def to_spritekit_coords(pos):
 
 # --- INITIALIZATION FUNCTION ---
 def initialize_level():
-    global level_number, level_name, max_strikes_for_two_stars, max_strikes_for_one_star, level_folder_path
+    global level_number, level_name, max_strikes_for_three_stars, max_strikes_for_two_stars, max_strikes_for_one_star, level_folder_path
     
     print("\n=== Level Creator Setup ===")
     
@@ -73,15 +74,28 @@ def initialize_level():
         level_name = f"Level {level_number}"
     
     # Ask for star thresholds
-    print("\nStar thresholds (maxStrikesForTwoStars must be LESS than maxStrikesForOneStar):")
+    print("\nStar thresholds (must be in order: 3 stars < 2 stars < 1 star):")
+    print("Note: If strokes < threshold for 2 stars, you get 3 stars (perfect!)")
     while True:
         try:
-            max_strikes_for_two_stars = int(input("Max strikes for 2 stars (e.g., 3): "))
-            max_strikes_for_one_star = int(input("Max strikes for 1 star (e.g., 5): "))
-            if max_strikes_for_two_stars < max_strikes_for_one_star:
-                break
+            max_strikes_for_three_stars_input = input("Max strikes for 3 stars (optional, press Enter to skip): ").strip()
+            if max_strikes_for_three_stars_input:
+                max_strikes_for_three_stars = int(max_strikes_for_three_stars_input)
             else:
+                max_strikes_for_three_stars = None
+            
+            max_strikes_for_two_stars = int(input("Max strikes for 2 stars (e.g., 4): "))
+            max_strikes_for_one_star = int(input("Max strikes for 1 star (e.g., 6): "))
+            
+            # Validate thresholds
+            if max_strikes_for_three_stars is not None:
+                if max_strikes_for_three_stars >= max_strikes_for_two_stars:
+                    print("ERROR: maxStrikesForThreeStars must be LESS than maxStrikesForTwoStars!")
+                    continue
+            if max_strikes_for_two_stars >= max_strikes_for_one_star:
                 print("ERROR: maxStrikesForTwoStars must be LESS than maxStrikesForOneStar!")
+                continue
+            break
         except ValueError:
             print("Please enter valid numbers!")
     
@@ -114,12 +128,16 @@ def save_level():
         "maxStrikesForOneStar": max_strikes_for_one_star,
         "maxStrikesForTwoStars": max_strikes_for_two_stars,
         "playerStartPosition": to_spritekit_coords(player_pos),
+    }
+    if max_strikes_for_three_stars is not None:
+        level_data["maxStrikesForThreeStars"] = max_strikes_for_three_stars
+    level_data.update({
         "hole": {
             "position": to_spritekit_coords(hole_pos),
             "radius": 20
         },
         "terrain": []
-    }
+    })
     for poly in terrain_polygons:
         if not poly:
             continue
@@ -180,7 +198,8 @@ print("  Modes: 'P' (Player) | 'H' (Hole) | 'T' (Terrain)")
 print("  Grid : 'G' (Toggle Snap) | '+' (Grid Bigger) | '-' (Grid Smaller)")
 print("  File : 'S' (Save) | 'C' (Clear) | 'R' (Reset ALL)")
 print(f"Current Mode: {mode} | Grid Size: {grid_size} | Grid Snap: ON")
-print(f"Level: {level_name} | 2 Stars: <= {max_strikes_for_two_stars} | 1 Star: <= {max_strikes_for_one_star}")
+three_star_info = f"3 Stars: <= {max_strikes_for_three_stars} | " if max_strikes_for_three_stars is not None else ""
+print(f"Level: {level_name} | {three_star_info}2 Stars: <= {max_strikes_for_two_stars} | 1 Star: <= {max_strikes_for_one_star}")
 
 while running:
     # --- NEW: Mouse coordinate scaling ---

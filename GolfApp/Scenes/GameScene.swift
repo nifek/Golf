@@ -20,6 +20,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var aimLine: SKShapeNode?
     private var dragStartPoint: CGPoint?
     private var sceneIsConfigured = false
+    private var levelCompleted = false
     
     private var strokes = 0 {
         didSet {
@@ -63,6 +64,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         removeAllChildren()
         terrainNodes.removeAll()
         strokes = 0
+        levelCompleted = false
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
         setupBackground()
@@ -266,6 +268,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     func didBegin(_ contact: SKPhysicsContact) {
+        guard !levelCompleted else { return }
         let categories = [
             contact.bodyA.categoryBitMask,
             contact.bodyB.categoryBitMask
@@ -276,25 +279,59 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func handleBallEnteredHole() {
-        guard let ball = ballNode else { return }
+        guard !levelCompleted, let ball = ballNode else { return }
+        levelCompleted = true
+        
         ball.physicsBody?.velocity = .zero
         let shrink = SKAction.scale(to: 0.1, duration: 0.35)
         let fade = SKAction.fadeOut(withDuration: 0.35)
         let group = SKAction.group([shrink, fade])
         
         let stars = calculateStars()
+        let threeStarInfo = level.maxStrikesForThreeStars.map { "Max for 3 stars: \($0), " } ?? ""
+        print("DEBUG: Level completed with \(strokes) strokes. \(threeStarInfo)Max for 2 stars: \(level.maxStrikesForTwoStars), Max for 1 star: \(level.maxStrikesForOneStar). Calculated stars: \(stars)")
         onLevelComplete?(stars)
         
         ball.run(group)
     }
     
     private func calculateStars() -> Int {
-        // Ensure maxStrikesForTwoStars < maxStrikesForOneStar for correct logic
+        // Star calculation logic with 3 thresholds:
+        // - 3 stars: strokes < maxStrikesForTwoStars (perfect - better than 2-star threshold)
+        // - 2 stars: strokes <= maxStrikesForTwoStars (but not 3)
+        // - 1 star: strokes <= maxStrikesForOneStar (but not 2 or 3)
+        // - 0 stars: strokes > maxStrikesForOneStar (completed but not great)
+        // Note: maxStrikesForThreeStars (if set) < maxStrikesForTwoStars < maxStrikesForOneStar
+        
+        // Safety check: ensure we have at least 1 stroke (should always be true when ball enters hole)
+        guard strokes > 0 else {
+            print("WARNING: Level completed with 0 strokes! This shouldn't happen.")
+            return 0
+        }
+        
+        // Check for 3 stars: if threshold is set and strokes are less than it, or if strokes < maxStrikesForTwoStars
+        if let threeStarThreshold = level.maxStrikesForThreeStars {
+            if strokes <= threeStarThreshold {
+                return 3
+            }
+        } else {
+            // If no 3-star threshold set, use: strokes < maxStrikesForTwoStars for 3 stars
+            if strokes < level.maxStrikesForTwoStars {
+                return 3
+            }
+        }
+        
+        // Check for 2 stars
         if strokes <= level.maxStrikesForTwoStars {
             return 2
-        } else if strokes <= level.maxStrikesForOneStar {
+        }
+        
+        // Check for 1 star
+        if strokes <= level.maxStrikesForOneStar {
             return 1
         }
+        
+        // 0 stars
         return 0
     }
 }
