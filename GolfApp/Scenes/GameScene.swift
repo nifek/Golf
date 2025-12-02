@@ -289,8 +289,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     private func calculateStars() -> Int {
+        // Ensure maxStrikesForTwoStars < maxStrikesForOneStar for correct logic
         if strokes <= level.maxStrikesForTwoStars {
-            return 2 // Or 3 if we want to support 3 stars later, but spec said 2 values
+            return 2
         } else if strokes <= level.maxStrikesForOneStar {
             return 1
         }

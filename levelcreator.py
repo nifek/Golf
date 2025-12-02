@@ -1,5 +1,6 @@
 import pygame
 import json
+import os
 
 # --- CONFIG ---
 # NEW: Logical size (the "real" iPhone screen)
@@ -33,6 +34,13 @@ current_polygon = []
 snap_enabled = True  
 grid_size = DEFAULT_GRID_SIZE
 
+# --- LEVEL CONFIG ---
+level_number = None
+level_name = None
+max_strikes_for_two_stars = None
+max_strikes_for_one_star = None
+level_folder_path = None
+
 # --- COORDINATE CONVERSION (MODIFIED) ---
 # Now uses LOGICAL dimensions to calculate the final JSON coords
 def to_spritekit_coords(pos):
@@ -42,19 +50,69 @@ def to_spritekit_coords(pos):
     swift_y = (LOGICAL_HEIGHT / 2) - pygame_y 
     return {"x": swift_x, "y": swift_y}
 
-# --- SAVE FUNCTION (Unchanged) ---
-# This function doesn't care about the window, only the
-# logical coordinates (player_pos, etc.) which are already correct.
-def save_level(filename="MyLevel.json"):
+# --- INITIALIZATION FUNCTION ---
+def initialize_level():
+    global level_number, level_name, max_strikes_for_two_stars, max_strikes_for_one_star, level_folder_path
+    
+    print("\n=== Level Creator Setup ===")
+    
+    # Ask for level number
+    while True:
+        try:
+            level_number = int(input("Enter level number (e.g., 1, 2, 3): "))
+            if level_number > 0:
+                break
+            else:
+                print("Level number must be positive!")
+        except ValueError:
+            print("Please enter a valid number!")
+    
+    # Ask for level name
+    level_name = input(f"Enter level name (default: 'Level {level_number}'): ").strip()
+    if not level_name:
+        level_name = f"Level {level_number}"
+    
+    # Ask for star thresholds
+    print("\nStar thresholds (maxStrikesForTwoStars must be LESS than maxStrikesForOneStar):")
+    while True:
+        try:
+            max_strikes_for_two_stars = int(input("Max strikes for 2 stars (e.g., 3): "))
+            max_strikes_for_one_star = int(input("Max strikes for 1 star (e.g., 5): "))
+            if max_strikes_for_two_stars < max_strikes_for_one_star:
+                break
+            else:
+                print("ERROR: maxStrikesForTwoStars must be LESS than maxStrikesForOneStar!")
+        except ValueError:
+            print("Please enter valid numbers!")
+    
+    # Determine level folder path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    level_folder_path = os.path.join(script_dir, "GolfApp", "Views", "Levels", "Levels")
+    
+    # Create directory if it doesn't exist
+    os.makedirs(level_folder_path, exist_ok=True)
+    
+    print(f"\nLevel will be saved to: {os.path.join(level_folder_path, f'level_{level_number}.json')}")
+    print("Setup complete! You can now start creating your level.\n")
+
+# --- SAVE FUNCTION ---
+def save_level():
     if not player_pos or not hole_pos:
         print("ERROR: You must place a Player and a Hole before saving.")
         return
-    # ... (rest of save function is identical to before) ...
-    print(f"Saving level to {filename}...")
+    
+    if level_number is None:
+        print("ERROR: Level not initialized. Please restart the script.")
+        return
+    
+    filename = f"level_{level_number}.json"
+    filepath = os.path.join(level_folder_path, filename)
+    
+    print(f"Saving level to {filepath}...")
     level_data = {
-        "levelName": "My New Level",
-        "maxStrikesForOneStar": 5,
-        "maxStrikesForTwoStars": 3,
+        "levelName": level_name,
+        "maxStrikesForOneStar": max_strikes_for_one_star,
+        "maxStrikesForTwoStars": max_strikes_for_two_stars,
         "playerStartPosition": to_spritekit_coords(player_pos),
         "hole": {
             "position": to_spritekit_coords(hole_pos),
@@ -77,9 +135,10 @@ def save_level(filename="MyLevel.json"):
             swift_rel_vertex = {"x": rel_x, "y": -rel_y}
             terrain_block["vertices"].append(swift_rel_vertex)
         level_data["terrain"].append(terrain_block)
-    with open(filename, 'w') as f:
+    
+    with open(filepath, 'w') as f:
         json.dump(level_data, f, indent=2)
-    print("Level saved!")
+    print(f"Level saved successfully to {filepath}!")
 
 
 # --- HELPER FUNCTIONS (MODIFIED) ---
@@ -108,6 +167,9 @@ pygame.display.set_caption("iPhone 16 Golf Editor (Scaled Preview)")
 font = pygame.font.SysFont(None, 24)
 
 # --- MAIN LOOP ---
+# Initialize level settings first
+initialize_level()
+
 running = True
 mode = "PLAYER" 
 print("--- iPhone Golf Level Editor (Scaled) ---")
@@ -118,6 +180,7 @@ print("  Modes: 'P' (Player) | 'H' (Hole) | 'T' (Terrain)")
 print("  Grid : 'G' (Toggle Snap) | '+' (Grid Bigger) | '-' (Grid Smaller)")
 print("  File : 'S' (Save) | 'C' (Clear) | 'R' (Reset ALL)")
 print(f"Current Mode: {mode} | Grid Size: {grid_size} | Grid Snap: ON")
+print(f"Level: {level_name} | 2 Stars: <= {max_strikes_for_two_stars} | 1 Star: <= {max_strikes_for_one_star}")
 
 while running:
     # --- NEW: Mouse coordinate scaling ---
