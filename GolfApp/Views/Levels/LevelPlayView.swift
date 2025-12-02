@@ -8,12 +8,21 @@ struct LevelPlayView: View {
     @State private var scene: GameScene?
     @State private var loadError: String?
     @State private var isLoading = false
+    @State private var completedStars: Int?
 
     var body: some View {
         Group {
             if let scene {
-                SpriteView(scene: scene)
-                    .ignoresSafeArea(edges: .all)
+                ZStack {
+                    SpriteView(scene: scene)
+                        .ignoresSafeArea(edges: .all)
+                    
+                    if let completedStars {
+                        LevelCompleteOverlay(stars: completedStars) {
+                            self.completedStars = nil
+                        }
+                    }
+                }
             } else if let loadError {
                 VStack(spacing: 16) {
                     Text("Unable to load level")
@@ -73,6 +82,7 @@ struct LevelPlayView: View {
             scene?.onLevelComplete = { stars in
                 Task { @MainActor in
                     appState.updateStars(for: level.id, stars: stars)
+                    completedStars = stars
                 }
             }
         } catch {
@@ -80,6 +90,51 @@ struct LevelPlayView: View {
         }
 
         isLoading = false
+    }
+}
+
+private struct LevelCompleteOverlay: View {
+    let stars: Int
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.7)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    onDismiss()
+                }
+            
+            VStack(spacing: 24) {
+                Text("Level Complete!")
+                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 16) {
+                    ForEach(0..<3, id: \.self) { idx in
+                        Image(systemName: idx < stars ? "star.fill" : "star")
+                            .font(.system(size: 48))
+                            .foregroundColor(Theme.gold)
+                            .scaleEffect(idx < stars ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.6).delay(Double(idx) * 0.1), value: stars)
+                    }
+                }
+                .padding(.vertical, 8)
+                
+                Button("Continue") {
+                    onDismiss()
+                }
+                .buttonStyle(FilledButtonStyle())
+                .frame(width: 200)
+            }
+            .padding(32)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Theme.surface)
+                    .shadow(color: Theme.shadow, radius: 20, x: 0, y: 10)
+            )
+            .padding(40)
+        }
     }
 }
 

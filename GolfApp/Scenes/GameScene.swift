@@ -190,7 +190,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             let touch = touches.first,
             let ball = ballNode,
             let body = ball.physicsBody,
-            body.velocity.magnitude < 5
+            body.velocity.magnitude < 1.0
         else { return }
 
         let location = touch.location(in: self)
