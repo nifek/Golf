@@ -18,9 +18,7 @@ struct LevelPlayView: View {
                         .ignoresSafeArea(edges: .all)
                     
                     if let completedStars {
-                        LevelCompleteOverlay(stars: completedStars, onDismiss: {
-                            self.completedStars = nil
-                        }, onGoToMenu: {
+                        LevelCompleteOverlay(stars: completedStars, onGoToMenu: {
                             self.completedStars = nil
                         })
                     }
@@ -98,7 +96,6 @@ struct LevelPlayView: View {
 
 private struct LevelCompleteOverlay: View {
     let stars: Int
-    let onDismiss: () -> Void
     let onGoToMenu: () -> Void
     @Environment(\.dismiss) private var dismiss
     
@@ -123,25 +120,17 @@ private struct LevelCompleteOverlay: View {
                 }
                 .padding(.vertical, 8)
                 
-                VStack(spacing: 12) {
-                    Button("Go to Menu") {
-                        onGoToMenu()
-                        // Dismiss twice to go back to menu (LevelPlayView -> LevelsView -> MainMenuView)
-                        Task { @MainActor in
-                            dismiss()
-                            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                            dismiss()
-                        }
+                Button("Go to Menu") {
+                    onGoToMenu()
+                    // Dismiss twice to go back to menu (LevelPlayView -> LevelsView -> MainMenuView)
+                    Task { @MainActor in
+                        dismiss()
+                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                        dismiss()
                     }
-                    .buttonStyle(FilledButtonStyle())
-                    .frame(width: 200)
-                    
-                    Button("Continue") {
-                        onDismiss()
-                    }
-                    .buttonStyle(FilledButtonStyle(color: Theme.surface))
-                    .frame(width: 200)
                 }
+                .buttonStyle(FilledButtonStyle())
+                .frame(width: 200)
             }
             .padding(32)
             .background(
