@@ -50,7 +50,7 @@ struct LevelPlayView: View {
                     .background(Theme.background.ignoresSafeArea())
             }
         }
-        .navigationTitle(level.name)
+        .navigationTitle("Level \(level.id)")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(completedStars != nil)
         .task {
@@ -81,7 +81,7 @@ struct LevelPlayView: View {
                     }
                 }
             }
-            scene = GameScene(level: definition)
+            scene = GameScene(level: definition, levelNumber: level.id)
             scene?.onLevelComplete = { stars in
                 Task { @MainActor in
                     appState.updateStars(for: level.id, stars: stars)

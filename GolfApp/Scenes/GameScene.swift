@@ -10,6 +10,7 @@ private enum PhysicsCategory {
 
 final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let level: LevelDefinition
+    private let levelNumberText: String?
     private let ballRadius: CGFloat = 12
     private let maxStrokeLength: CGFloat = 200
     private let strokePowerScale: CGFloat = 0.25
@@ -34,8 +35,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var onLevelComplete: ((Int) -> Void)?
 
-    init(level: LevelDefinition) {
+    init(level: LevelDefinition, levelNumber: Int?) {
         self.level = level
+        self.levelNumberText = levelNumber.map { "Level \($0)" }
         let screenSize = UIScreen.main.bounds.size
         let fallbackSize = CGSize(width: 768, height: 1024)
         super.init(size: screenSize == .zero ? fallbackSize : screenSize)
@@ -90,15 +92,19 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
-        let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        levelNode.text = level.levelName
-        levelNode.fontSize = 28
-        levelNode.fontColor = .white
-        levelNode.horizontalAlignmentMode = .left
-        levelNode.verticalAlignmentMode = .top
-        levelNode.zPosition = 100
-        addChild(levelNode)
-        levelLabel = levelNode
+        if let levelText = levelNumberText {
+            let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            levelNode.text = levelText
+            levelNode.fontSize = 28
+            levelNode.fontColor = .white
+            levelNode.horizontalAlignmentMode = .left
+            levelNode.verticalAlignmentMode = .top
+            levelNode.zPosition = 100
+            addChild(levelNode)
+            levelLabel = levelNode
+        } else {
+            levelLabel = nil
+        }
         
         let strokeNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
         strokeNode.text = "Strikes: \(strokes)"
