@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AuthFlowView: View {
     @EnvironmentObject private var appState: AppState
@@ -41,7 +42,8 @@ struct AuthFlowView: View {
 }
 
 private struct RegisterForm: View {
-    var onSuccess: (User) -> Void
+    var onSuccess: (UserResponse) -> Void
+    @State private var email: String = ""
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var isPasswordVisible: Bool = false
@@ -50,7 +52,19 @@ private struct RegisterForm: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            LabeledField(systemName: "person.fill", placeholder: "Username", text: $username)
+            LabeledField(
+                systemName: "envelope.fill",
+                placeholder: "Email",
+                text: $email,
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress
+            )
+            LabeledField(
+                systemName: "person.fill",
+                placeholder: "Username",
+                text: $username,
+                textContentType: .username
+            )
             PasswordField(placeholder: "Create a password", text: $password, isVisible: $isPasswordVisible)
 
             Button(action: submit) {
@@ -77,19 +91,29 @@ private struct RegisterForm: View {
         isLoading = true
         Task {
             do {
-                let user = try await AuthService.shared.register(username: username, password: password)
-                onSuccess(user)
+                let user = try await AuthService.shared.register(
+                    email: email,
+                    password: password,
+                    username: username
+                )
+                await MainActor.run {
+                    onSuccess(user)
+                }
             } catch {
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                await MainActor.run {
+                    self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                }
             }
-            isLoading = false
+            await MainActor.run {
+                isLoading = false
+            }
         }
     }
 }
 
 private struct LoginForm: View {
-    var onSuccess: (User) -> Void
-    @State private var username: String = ""
+    var onSuccess: (UserResponse) -> Void
+    @State private var email: String = ""
     @State private var password: String = ""
     @State private var isPasswordVisible: Bool = false
     @State private var isLoading: Bool = false
@@ -97,7 +121,13 @@ private struct LoginForm: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            LabeledField(systemName: "person.fill", placeholder: "Username", text: $username)
+            LabeledField(
+                systemName: "envelope.fill",
+                placeholder: "Email",
+                text: $email,
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress
+            )
             PasswordField(placeholder: "Enter your password", text: $password, isVisible: $isPasswordVisible)
 
             Button(action: submit) {
@@ -124,12 +154,18 @@ private struct LoginForm: View {
         isLoading = true
         Task {
             do {
-                let user = try await AuthService.shared.login(username: username, password: password)
-                onSuccess(user)
+                let user = try await AuthService.shared.login(email: email, password: password)
+                await MainActor.run {
+                    onSuccess(user)
+                }
             } catch {
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                await MainActor.run {
+                    self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                }
             }
-            isLoading = false
+            await MainActor.run {
+                isLoading = false
+            }
         }
     }
 }
@@ -164,13 +200,18 @@ private struct LabeledField: View {
     let systemName: String
     let placeholder: String
     @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    var textContentType: UITextContentType? = nil
+    var autocapitalization: TextInputAutocapitalization = .never
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: systemName)
                 .foregroundColor(.white.opacity(0.9))
             TextField(placeholder, text: $text)
-                .textInputAutocapitalization(.never)
+                .textInputAutocapitalization(autocapitalization)
+                .textContentType(textContentType)
+                .keyboardType(keyboardType)
                 .autocorrectionDisabled()
                 .foregroundColor(.white)
         }
@@ -200,6 +241,7 @@ private struct PasswordField: View {
             }
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
+            .textContentType(.password)
             .foregroundColor(.white)
 
             Button(action: { isVisible.toggle() }) {
