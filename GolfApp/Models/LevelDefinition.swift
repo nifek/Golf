@@ -25,6 +25,41 @@ struct LevelDefinition: Codable, Hashable {
     let playerStartPosition: LevelVector
     let hole: Hole
     let terrain: [TerrainPolygon]
+    let maxStrikesForThreeStars: Int
+    let maxStrikesForTwoStars: Int
+    let maxStrikesForOneStar: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case levelName
+        case playerStartPosition
+        case hole
+        case terrain
+        case maxStrikesForThreeStars
+        case maxStrikesForTwoStars
+        case maxStrikesForOneStar
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        levelName = try container.decode(String.self, forKey: .levelName)
+        playerStartPosition = try container.decode(LevelVector.self, forKey: .playerStartPosition)
+        hole = try container.decode(Hole.self, forKey: .hole)
+        terrain = try container.decode([TerrainPolygon].self, forKey: .terrain)
+        maxStrikesForThreeStars = try container.decode(Int.self, forKey: .maxStrikesForThreeStars)
+        maxStrikesForTwoStars = try container.decode(Int.self, forKey: .maxStrikesForTwoStars)
+        maxStrikesForOneStar = try container.decode(Int.self, forKey: .maxStrikesForOneStar)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(levelName, forKey: .levelName)
+        try container.encode(playerStartPosition, forKey: .playerStartPosition)
+        try container.encode(hole, forKey: .hole)
+        try container.encode(terrain, forKey: .terrain)
+        try container.encode(maxStrikesForThreeStars, forKey: .maxStrikesForThreeStars)
+        try container.encode(maxStrikesForTwoStars, forKey: .maxStrikesForTwoStars)
+        try container.encode(maxStrikesForOneStar, forKey: .maxStrikesForOneStar)
+    }
 }
 
 extension TerrainPolygon {

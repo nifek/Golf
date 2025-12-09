@@ -10,9 +10,12 @@ private enum PhysicsCategory {
 
 final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let level: LevelDefinition
+    private let levelNumberText: String?
     private let ballRadius: CGFloat = 12
     private let maxStrokeLength: CGFloat = 200
     private let strokePowerScale: CGFloat = 0.25
+    private let readyVelocityThreshold: CGFloat = 5
+    private let autoStopVelocityThreshold: CGFloat = 1.5
 
     private var ballNode: SKShapeNode?
     private var holeNode: SKShapeNode?
@@ -20,6 +23,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var aimLine: SKShapeNode?
     private var dragStartPoint: CGPoint?
     private var sceneIsConfigured = false
+    private var levelCompleted = false
     
     private var strokes = 0 {
         didSet {
@@ -27,9 +31,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     private var strokeLabel: SKLabelNode?
+    private var levelLabel: SKLabelNode?
+    
+    var onLevelComplete: ((Int) -> Void)?
 
-    init(level: LevelDefinition) {
+    init(level: LevelDefinition, levelNumber: Int?) {
         self.level = level
+        self.levelNumberText = levelNumber.map { "Level \($0)" }
         let screenSize = UIScreen.main.bounds.size
         let fallbackSize = CGSize(width: 768, height: 1024)
         super.init(size: screenSize == .zero ? fallbackSize : screenSize)
@@ -52,7 +60,17 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if sceneIsConfigured {
             updateBackgroundSize()
             updateWorldBoundsBody()
-            strokeLabel?.position = CGPoint(x: 0, y: size.height / 2 - 60)
+            updateHUDLayout()
+        }
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        super.update(currentTime)
+        guard let body = ballNode?.physicsBody else { return }
+        let speed = body.velocity.magnitude
+        if speed <= autoStopVelocityThreshold {
+            body.velocity = .zero
+            body.angularVelocity = 0
         }
     }
 
@@ -61,6 +79,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         removeAllChildren()
         terrainNodes.removeAll()
         strokes = 0
+        levelCompleted = false
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
         setupBackground()
@@ -73,16 +92,45 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "Strikes: \(strokes)"
-        label.fontSize = 32
-        label.fontColor = .white
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .top
-        label.position = CGPoint(x: 0, y: size.height / 2 - 60) // Padding from top
-        label.zPosition = 100
-        addChild(label)
-        strokeLabel = label
+        if let levelText = levelNumberText {
+            let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            levelNode.text = levelText
+            levelNode.fontSize = 28
+            levelNode.fontColor = .white
+            levelNode.horizontalAlignmentMode = .left
+            levelNode.verticalAlignmentMode = .top
+            levelNode.zPosition = 100
+            addChild(levelNode)
+            levelLabel = levelNode
+        } else {
+            levelLabel = nil
+        }
+        
+        let strokeNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        strokeNode.text = "Strikes: \(strokes)"
+        strokeNode.fontSize = 28
+        strokeNode.fontColor = .white
+        strokeNode.horizontalAlignmentMode = .right
+        strokeNode.verticalAlignmentMode = .top
+        strokeNode.zPosition = 100
+        addChild(strokeNode)
+        strokeLabel = strokeNode
+        
+        updateHUDLayout()
+    }
+
+    private func updateHUDLayout() {
+        let topPadding: CGFloat = 90
+        let horizontalPadding: CGFloat = 24
+        let topY = size.height / 2 - topPadding
+        levelLabel?.position = CGPoint(
+            x: -size.width / 2 + horizontalPadding,
+            y: topY
+        )
+        strokeLabel?.position = CGPoint(
+            x: size.width / 2 - horizontalPadding,
+            y: topY
+        )
     }
 
     private func setupBackground() {
@@ -188,7 +236,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             let touch = touches.first,
             let ball = ballNode,
             let body = ball.physicsBody,
-            body.velocity.magnitude < 5
+            body.velocity.magnitude <= readyVelocityThreshold
         else { return }
 
         let location = touch.location(in: self)
@@ -264,6 +312,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     func didBegin(_ contact: SKPhysicsContact) {
+        guard !levelCompleted else { return }
         let categories = [
             contact.bodyA.categoryBitMask,
             contact.bodyB.categoryBitMask
@@ -274,12 +323,49 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func handleBallEnteredHole() {
-        guard let ball = ballNode else { return }
+        guard !levelCompleted, let ball = ballNode else { return }
+        levelCompleted = true
+        
         ball.physicsBody?.velocity = .zero
         let shrink = SKAction.scale(to: 0.1, duration: 0.35)
         let fade = SKAction.fadeOut(withDuration: 0.35)
         let group = SKAction.group([shrink, fade])
+        
+        let stars = calculateStars()
+        print("DEBUG: Level completed with \(strokes) strokes. Max for 3 stars: \(level.maxStrikesForThreeStars), Max for 2 stars: \(level.maxStrikesForTwoStars), Max for 1 star: \(level.maxStrikesForOneStar). Calculated stars: \(stars)")
+        onLevelComplete?(stars)
+        
         ball.run(group)
+    }
+    
+    private func calculateStars() -> Int {
+        // Star calculation logic with 3 thresholds:
+        // - 3 stars: strokes <= maxStrikesForThreeStars
+        // - 2 stars: strokes <= maxStrikesForTwoStars
+        // - 1 star: strokes <= maxStrikesForOneStar
+        // - 0 stars: strokes > maxStrikesForOneStar
+        // Expectation: maxStrikesForThreeStars < maxStrikesForTwoStars < maxStrikesForOneStar
+        
+        // Safety check: ensure we have at least 1 stroke (should always be true when ball enters hole)
+        guard strokes > 0 else {
+            print("WARNING: Level completed with 0 strokes! This shouldn't happen.")
+            return 0
+        }
+        
+        if strokes <= level.maxStrikesForThreeStars {
+            return 3
+        }
+
+        if strokes <= level.maxStrikesForTwoStars {
+            return 2
+        }
+        
+        // Check for 1 star
+        if strokes <= level.maxStrikesForOneStar {
+            return 1
+        }
+        
+        return 0
     }
 }
 

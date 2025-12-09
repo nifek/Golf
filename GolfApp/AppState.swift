@@ -45,4 +45,11 @@ final class AppState: ObservableObject {
     func levelDefinition(for level: Level) throws -> LevelDefinition {
         try levelLibrary.loadDefinition(for: level)
     }
+    
+    func updateStars(for levelID: Int, stars: Int) {
+        guard let index = levels.firstIndex(where: { $0.id == levelID }) else { return }
+        if stars > levels[index].stars {
+            levels[index].stars = stars
+        }
+    }
 }
