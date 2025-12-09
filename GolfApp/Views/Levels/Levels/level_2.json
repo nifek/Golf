@@ -1,7 +1,8 @@
 {
   "levelName": "My New Level",
-  "maxStrikesForOneStar": 6,
+  "maxStrikesForThreeStars": 3,
   "maxStrikesForTwoStars": 4,
+  "maxStrikesForOneStar": 6,
   "playerStartPosition": {
     "x": 73.0,
     "y": 168.0

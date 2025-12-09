@@ -13,6 +13,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let ballRadius: CGFloat = 12
     private let maxStrokeLength: CGFloat = 200
     private let strokePowerScale: CGFloat = 0.25
+    private let readyVelocityThreshold: CGFloat = 5
+    private let autoStopVelocityThreshold: CGFloat = 1.5
 
     private var ballNode: SKShapeNode?
     private var holeNode: SKShapeNode?
@@ -28,6 +30,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     private var strokeLabel: SKLabelNode?
+    private var levelLabel: SKLabelNode?
     
     var onLevelComplete: ((Int) -> Void)?
 
@@ -55,7 +58,17 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if sceneIsConfigured {
             updateBackgroundSize()
             updateWorldBoundsBody()
-            strokeLabel?.position = CGPoint(x: 0, y: size.height / 2 - 60)
+            updateHUDLayout()
+        }
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        super.update(currentTime)
+        guard let body = ballNode?.physicsBody else { return }
+        let speed = body.velocity.magnitude
+        if speed <= autoStopVelocityThreshold {
+            body.velocity = .zero
+            body.angularVelocity = 0
         }
     }
 
@@ -77,16 +90,41 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "Strikes: \(strokes)"
-        label.fontSize = 32
-        label.fontColor = .white
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .top
-        label.position = CGPoint(x: 0, y: size.height / 2 - 60) // Padding from top
-        label.zPosition = 100
-        addChild(label)
-        strokeLabel = label
+        let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        levelNode.text = level.levelName
+        levelNode.fontSize = 28
+        levelNode.fontColor = .white
+        levelNode.horizontalAlignmentMode = .left
+        levelNode.verticalAlignmentMode = .top
+        levelNode.zPosition = 100
+        addChild(levelNode)
+        levelLabel = levelNode
+        
+        let strokeNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        strokeNode.text = "Strikes: \(strokes)"
+        strokeNode.fontSize = 28
+        strokeNode.fontColor = .white
+        strokeNode.horizontalAlignmentMode = .right
+        strokeNode.verticalAlignmentMode = .top
+        strokeNode.zPosition = 100
+        addChild(strokeNode)
+        strokeLabel = strokeNode
+        
+        updateHUDLayout()
+    }
+
+    private func updateHUDLayout() {
+        let topPadding: CGFloat = 90
+        let horizontalPadding: CGFloat = 24
+        let topY = size.height / 2 - topPadding
+        levelLabel?.position = CGPoint(
+            x: -size.width / 2 + horizontalPadding,
+            y: topY
+        )
+        strokeLabel?.position = CGPoint(
+            x: size.width / 2 - horizontalPadding,
+            y: topY
+        )
     }
 
     private func setupBackground() {
@@ -192,7 +230,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             let touch = touches.first,
             let ball = ballNode,
             let body = ball.physicsBody,
-            body.velocity.magnitude < 1.0
+            body.velocity.magnitude <= readyVelocityThreshold
         else { return }
 
         let location = touch.location(in: self)
@@ -288,8 +326,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let group = SKAction.group([shrink, fade])
         
         let stars = calculateStars()
-        let threeStarInfo = level.maxStrikesForThreeStars.map { "Max for 3 stars: \($0), " } ?? ""
-        print("DEBUG: Level completed with \(strokes) strokes. \(threeStarInfo)Max for 2 stars: \(level.maxStrikesForTwoStars), Max for 1 star: \(level.maxStrikesForOneStar). Calculated stars: \(stars)")
+        print("DEBUG: Level completed with \(strokes) strokes. Max for 3 stars: \(level.maxStrikesForThreeStars), Max for 2 stars: \(level.maxStrikesForTwoStars), Max for 1 star: \(level.maxStrikesForOneStar). Calculated stars: \(stars)")
         onLevelComplete?(stars)
         
         ball.run(group)
@@ -297,11 +334,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     
     private func calculateStars() -> Int {
         // Star calculation logic with 3 thresholds:
-        // - 3 stars: strokes < maxStrikesForTwoStars (perfect - better than 2-star threshold)
-        // - 2 stars: strokes <= maxStrikesForTwoStars (but not 3)
-        // - 1 star: strokes <= maxStrikesForOneStar (but not 2 or 3)
-        // - 0 stars: strokes > maxStrikesForOneStar (completed but not great)
-        // Note: maxStrikesForThreeStars (if set) < maxStrikesForTwoStars < maxStrikesForOneStar
+        // - 3 stars: strokes <= maxStrikesForThreeStars
+        // - 2 stars: strokes <= maxStrikesForTwoStars
+        // - 1 star: strokes <= maxStrikesForOneStar
+        // - 0 stars: strokes > maxStrikesForOneStar
+        // Expectation: maxStrikesForThreeStars < maxStrikesForTwoStars < maxStrikesForOneStar
         
         // Safety check: ensure we have at least 1 stroke (should always be true when ball enters hole)
         guard strokes > 0 else {
@@ -309,19 +346,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             return 0
         }
         
-        // Check for 3 stars: if threshold is set and strokes are less than it, or if strokes < maxStrikesForTwoStars
-        if let threeStarThreshold = level.maxStrikesForThreeStars {
-            if strokes <= threeStarThreshold {
-                return 3
-            }
-        } else {
-            // If no 3-star threshold set, use: strokes < maxStrikesForTwoStars for 3 stars
-            if strokes < level.maxStrikesForTwoStars {
-                return 3
-            }
+        if strokes <= level.maxStrikesForThreeStars {
+            return 3
         }
-        
-        // Check for 2 stars
+
         if strokes <= level.maxStrikesForTwoStars {
             return 2
         }
@@ -331,7 +359,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             return 1
         }
         
-        // 0 stars
         return 0
     }
 }

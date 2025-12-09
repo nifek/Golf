@@ -25,18 +25,18 @@ struct LevelDefinition: Codable, Hashable {
     let playerStartPosition: LevelVector
     let hole: Hole
     let terrain: [TerrainPolygon]
-    let maxStrikesForOneStar: Int
+    let maxStrikesForThreeStars: Int
     let maxStrikesForTwoStars: Int
-    let maxStrikesForThreeStars: Int?
+    let maxStrikesForOneStar: Int
     
     enum CodingKeys: String, CodingKey {
         case levelName
         case playerStartPosition
         case hole
         case terrain
-        case maxStrikesForOneStar
-        case maxStrikesForTwoStars
         case maxStrikesForThreeStars
+        case maxStrikesForTwoStars
+        case maxStrikesForOneStar
     }
     
     init(from decoder: Decoder) throws {
@@ -45,9 +45,9 @@ struct LevelDefinition: Codable, Hashable {
         playerStartPosition = try container.decode(LevelVector.self, forKey: .playerStartPosition)
         hole = try container.decode(Hole.self, forKey: .hole)
         terrain = try container.decode([TerrainPolygon].self, forKey: .terrain)
-        maxStrikesForOneStar = try container.decode(Int.self, forKey: .maxStrikesForOneStar)
+        maxStrikesForThreeStars = try container.decode(Int.self, forKey: .maxStrikesForThreeStars)
         maxStrikesForTwoStars = try container.decode(Int.self, forKey: .maxStrikesForTwoStars)
-        maxStrikesForThreeStars = try container.decodeIfPresent(Int.self, forKey: .maxStrikesForThreeStars)
+        maxStrikesForOneStar = try container.decode(Int.self, forKey: .maxStrikesForOneStar)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -56,9 +56,9 @@ struct LevelDefinition: Codable, Hashable {
         try container.encode(playerStartPosition, forKey: .playerStartPosition)
         try container.encode(hole, forKey: .hole)
         try container.encode(terrain, forKey: .terrain)
-        try container.encode(maxStrikesForOneStar, forKey: .maxStrikesForOneStar)
+        try container.encode(maxStrikesForThreeStars, forKey: .maxStrikesForThreeStars)
         try container.encode(maxStrikesForTwoStars, forKey: .maxStrikesForTwoStars)
-        try container.encodeIfPresent(maxStrikesForThreeStars, forKey: .maxStrikesForThreeStars)
+        try container.encode(maxStrikesForOneStar, forKey: .maxStrikesForOneStar)
     }
 }
 
