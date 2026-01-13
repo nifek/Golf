@@ -9,6 +9,9 @@ struct LevelPlayView: View {
     @State private var loadError: String?
     @State private var isLoading = false
     @State private var completedStars: Int?
+    @State private var levelStartTime: Date?
+    @State private var completionResult: LevelProgressResponse?
+    @State private var isSubmitting = false
 
     var body: some View {
         Group {
@@ -18,9 +21,14 @@ struct LevelPlayView: View {
                         .ignoresSafeArea(edges: .all)
                     
                     if let completedStars {
-                        LevelCompleteOverlay(stars: completedStars, onGoToMenu: {
-                            self.completedStars = nil
-                        })
+                        LevelCompleteOverlay(
+                            stars: completedStars,
+                            score: completionResult?.score,
+                            isSubmitting: isSubmitting,
+                            onGoToMenu: {
+                                self.completedStars = nil
+                            }
+                        )
                     }
                 }
             } else if let loadError {
@@ -79,11 +87,14 @@ struct LevelPlayView: View {
                     }
                 }
             }
+            
+            // Record start time for time tracking
+            levelStartTime = Date()
+            
             scene = GameScene(level: definition, levelNumber: level.id)
             scene?.onLevelComplete = { stars in
                 Task { @MainActor in
-                    appState.updateStars(for: level.id, stars: stars)
-                    completedStars = stars
+                    await handleLevelComplete(stars: stars)
                 }
             }
         } catch {
@@ -92,10 +103,38 @@ struct LevelPlayView: View {
 
         isLoading = false
     }
+    
+    @MainActor
+    private func handleLevelComplete(stars: Int) async {
+        // Calculate time taken
+        let timeToPassMs: Int
+        if let startTime = levelStartTime {
+            let elapsed = Date().timeIntervalSince(startTime)
+            timeToPassMs = Int(elapsed * 1000)
+        } else {
+            timeToPassMs = 60000 // Default to 60 seconds if start time wasn't recorded
+        }
+        
+        // Show stars immediately
+        completedStars = stars
+        
+        // Submit to backend
+        isSubmitting = true
+        if let result = await appState.completeLevel(
+            levelNumber: level.id,
+            timeToPassMs: timeToPassMs,
+            stars: stars
+        ) {
+            completionResult = result
+        }
+        isSubmitting = false
+    }
 }
 
 private struct LevelCompleteOverlay: View {
     let stars: Int
+    let score: Int?
+    let isSubmitting: Bool
     let onGoToMenu: () -> Void
     @Environment(\.dismiss) private var dismiss
     
@@ -120,6 +159,20 @@ private struct LevelCompleteOverlay: View {
                 }
                 .padding(.vertical, 8)
                 
+                // Show score if available
+                if let score = score {
+                    Text("Score: \(score)")
+                        .font(.title2.weight(.semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                } else if isSubmitting {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Saving...")
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                
                 Button("Go to Menu") {
                     onGoToMenu()
                     // Dismiss twice to go back to menu (LevelPlayView -> LevelsView -> MainMenuView)
@@ -131,6 +184,7 @@ private struct LevelCompleteOverlay: View {
                 }
                 .buttonStyle(FilledButtonStyle())
                 .frame(width: 200)
+                .disabled(isSubmitting)
             }
             .padding(32)
             .background(
@@ -142,5 +196,3 @@ private struct LevelCompleteOverlay: View {
         }
     }
 }
-
-

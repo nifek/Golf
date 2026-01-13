@@ -4,21 +4,43 @@ struct LevelsView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
-        List {
-            Section(header: listHeader) {
-                ForEach(appState.levels) { level in
-                    NavigationLink(destination: LevelPlayView(level: level)) {
-                        LevelRow(level: level)
-                    }
-                    .disabled(level.isLocked || level.resourceName == nil)
-                    .listRowBackground(Theme.surface.opacity(0.4))
-                    .opacity(level.isLocked ? 0.6 : 1)
+        Group {
+            if appState.isLoadingLevels {
+                VStack {
+                    Spacer()
+                    ProgressView()
+                        .tint(.white)
+                    Text("Loading progress...")
+                        .foregroundColor(.white.opacity(0.7))
+                        .padding(.top, 8)
+                    Spacer()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.background)
+            } else {
+                List {
+                    Section(header: listHeader) {
+                        ForEach(appState.levels) { level in
+                            NavigationLink(destination: LevelPlayView(level: level)) {
+                                LevelRow(level: level)
+                            }
+                            .disabled(level.isLocked || level.resourceName == nil)
+                            .listRowBackground(Theme.surface.opacity(0.4))
+                            .opacity(level.isLocked ? 0.6 : 1)
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .background(Theme.background)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Theme.background)
         .navigationTitle("Levels")
+        .task {
+            await appState.loadLevelProgress()
+        }
+        .refreshable {
+            await appState.loadLevelProgress()
+        }
     }
 
     private var listHeader: some View {
@@ -28,6 +50,19 @@ struct LevelsView: View {
 
 private struct LevelRow: View {
     let level: Level
+    
+    private var formattedTime: String? {
+        guard let timeMs = level.bestTimeMs else { return nil }
+        let seconds = Double(timeMs) / 1000.0
+        if seconds < 60 {
+            return String(format: "%.1fs", seconds)
+        } else {
+            let minutes = Int(seconds) / 60
+            let remainingSeconds = seconds.truncatingRemainder(dividingBy: 60)
+            return String(format: "%d:%05.2f", minutes, remainingSeconds)
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
@@ -36,13 +71,37 @@ private struct LevelRow: View {
                         Image(systemName: idx < level.stars ? "star.fill" : "star")
                             .foregroundColor(Theme.gold)
                     }
+                    
+                    if let score = level.bestScore {
+                        Text("•")
+                            .foregroundColor(.white.opacity(0.5))
+                        Text("\(score) pts")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
                 }
+                
                 Text(level.name)
                     .font(.headline)
                     .foregroundColor(.white)
-                Text(level.difficulty)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.8))
+                
+                HStack(spacing: 8) {
+                    Text(level.difficulty)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    if let time = formattedTime {
+                        Text("•")
+                            .foregroundColor(.white.opacity(0.5))
+                        HStack(spacing: 2) {
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                            Text(time)
+                                .font(.caption)
+                        }
+                        .foregroundColor(.white.opacity(0.6))
+                    }
+                }
             }
             Spacer()
             if level.isLocked {
@@ -61,5 +120,3 @@ private struct LevelRow: View {
         )
     }
 }
-
-

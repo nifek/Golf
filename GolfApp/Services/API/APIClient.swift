@@ -4,7 +4,7 @@ import FirebaseAuth
 // MARK: - API Configuration
 
 enum APIConfig {
-    static let baseURL = "http://localhost:8088"
+    static let baseURL = "http://localhost:8089"
     static let apiVersion = "/api/v1"
 }
 
@@ -93,7 +93,7 @@ actor APIClient {
         }
     }
     
-    // MARK: - Request Helpers
+    // MARK: - Generic Request
     
     func request<T: Decodable>(
         endpoint: String,
@@ -220,5 +220,163 @@ actor APIClient {
             throw APIError.serverError(errorResponse?.message ?? "Server error")
         }
     }
+    
+    // MARK: - Auth Endpoints
+    
+    /// Check if user exists in backend
+    func checkUser() async throws -> CheckUserResponse {
+        try await request(endpoint: "/auth/check")
+    }
+    
+    /// Sync/register user with backend
+    func syncUser(username: String) async throws -> UserResponse {
+        let body = SyncUserRequest(username: username)
+        return try await request(endpoint: "/auth/sync", method: .post, body: body)
+    }
+    
+    /// Get current user profile
+    func getCurrentUser() async throws -> UserResponse {
+        try await request(endpoint: "/auth/me")
+    }
+    
+    // MARK: - User Endpoints
+    
+    /// Get user by ID
+    func getUser(id: Int) async throws -> UserResponse {
+        try await request(endpoint: "/users/\(id)")
+    }
+    
+    /// Update user profile
+    func updateProfile(userId: Int, username: String? = nil, avatarUrl: String? = nil) async throws -> UserResponse {
+        let body = UpdateProfileRequest(username: username, avatarUrl: avatarUrl)
+        return try await request(endpoint: "/users/\(userId)", method: .put, body: body)
+    }
+    
+    /// Upload avatar image
+    func uploadAvatar(imageData: Data, fileName: String, mimeType: String) async throws -> AvatarUploadResponse {
+        try await uploadFile(
+            endpoint: "/users/me/avatar",
+            fileData: imageData,
+            fileName: fileName,
+            mimeType: mimeType
+        )
+    }
+    
+    // MARK: - Level Progress Endpoints
+    
+    /// Submit level completion (score calculated on backend)
+    func completeLevel(levelNumber: Int, timeToPassMs: Int, stars: Int) async throws -> LevelProgressResponse {
+        let body = LevelCompleteRequest(levelNumber: levelNumber, timeToPassMs: timeToPassMs, stars: stars)
+        return try await request(endpoint: "/levels/complete", method: .post, body: body)
+    }
+    
+    /// Get all level progress for current user
+    func getAllLevelProgress() async throws -> [LevelProgressResponse] {
+        try await request(endpoint: "/levels")
+    }
+    
+    /// Get specific level progress
+    func getLevelProgress(levelNumber: Int) async throws -> LevelProgressResponse {
+        try await request(endpoint: "/levels/\(levelNumber)")
+    }
+    
+    /// Get user stats
+    func getUserStats() async throws -> UserStatsResponse {
+        try await request(endpoint: "/levels/stats")
+    }
+    
+    // MARK: - Daily Challenge Endpoints
+    
+    /// Get today's daily challenge
+    func getTodayChallenge() async throws -> DailyChallengeResponse {
+        try await request(endpoint: "/daily-challenge")
+    }
+    
+    /// Get challenge by date (format: YYYY-MM-DD)
+    func getChallenge(date: String) async throws -> DailyChallengeResponse {
+        try await request(endpoint: "/daily-challenge/date/\(date)")
+    }
+    
+    /// Submit daily challenge attempt
+    func completeDailyChallenge(timeToPassMs: Int, strokes: Int, stars: Int) async throws -> DailyChallengeAttemptResponse {
+        let body = DailyChallengeCompleteRequest(timeToPassMs: timeToPassMs, strokes: strokes, stars: stars)
+        return try await request(endpoint: "/daily-challenge/complete", method: .post, body: body)
+    }
+    
+    /// Get my attempts for today's challenge
+    func getMyAttempts() async throws -> [DailyChallengeAttemptResponse] {
+        try await request(endpoint: "/daily-challenge/my-attempts")
+    }
+    
+    /// Get my attempts for a specific date's challenge
+    func getMyAttempts(date: String) async throws -> [DailyChallengeAttemptResponse] {
+        try await request(endpoint: "/daily-challenge/my-attempts/\(date)")
+    }
+    
+    /// Get today's leaderboard
+    func getDailyChallengeLeaderboard(limit: Int = 100) async throws -> [DailyChallengeLeaderboardEntry] {
+        try await request(endpoint: "/daily-challenge/leaderboard?limit=\(limit)")
+    }
+    
+    /// Get leaderboard for a specific date
+    func getDailyChallengeLeaderboard(date: String, limit: Int = 100) async throws -> [DailyChallengeLeaderboardEntry] {
+        try await request(endpoint: "/daily-challenge/leaderboard/\(date)?limit=\(limit)")
+    }
+    
+    // MARK: - Skins Endpoints
+    
+    /// Get all available skins with ownership status
+    func getAllSkins() async throws -> [SkinResponse] {
+        try await request(endpoint: "/skins")
+    }
+    
+    /// Get owned skins only
+    func getOwnedSkins() async throws -> [SkinResponse] {
+        try await request(endpoint: "/skins/owned")
+    }
+    
+    /// Get currently equipped skin
+    func getEquippedSkin() async throws -> SkinResponse {
+        try await request(endpoint: "/skins/equipped")
+    }
+    
+    /// Purchase a skin with coins
+    func buySkin(skinId: String) async throws -> BuySkinResponse {
+        let body = BuySkinRequest(skinId: skinId)
+        return try await request(endpoint: "/skins/buy", method: .post, body: body)
+    }
+    
+    /// Equip an owned skin
+    func equipSkin(skinId: String) async throws -> SkinResponse {
+        let body = EquipSkinRequest(skinId: skinId)
+        return try await request(endpoint: "/skins/equip", method: .post, body: body)
+    }
+    
+    // MARK: - Admin Endpoints (Daily Challenge)
+    
+    /// [Admin] Create a new daily challenge
+    func createDailyChallenge(
+        challengeDate: String,
+        fileUrl: String,
+        title: String? = nil,
+        description: String? = nil
+    ) async throws -> DailyChallengeResponse {
+        let body = CreateDailyChallengeRequest(
+            challengeDate: challengeDate,
+            fileUrl: fileUrl,
+            title: title,
+            description: description
+        )
+        return try await request(endpoint: "/daily-challenge/admin/create", method: .post, body: body)
+    }
+    
+    /// [Admin] Distribute rewards for a specific date
+    func distributeRewards(date: String) async throws -> RewardDistributionResult {
+        try await request(endpoint: "/daily-challenge/admin/distribute-rewards/\(date)", method: .post)
+    }
+    
+    /// [Admin] Distribute all pending rewards
+    func distributeAllPendingRewards() async throws -> [RewardDistributionResult] {
+        try await request(endpoint: "/daily-challenge/admin/distribute-all-rewards", method: .post)
+    }
 }
-
