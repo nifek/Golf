@@ -2,10 +2,11 @@ import Combine
 import Foundation
 import SwiftUI
 
+@MainActor
 final class AppState: ObservableObject {
     private let levelLibrary = LevelLibrary()
 
-    @Published var currentUser: User? = nil
+    @Published var currentUser: UserResponse? = nil
 
     @Published var coins: Int = 1500
     @Published var musicEnabled: Bool = true
@@ -19,12 +20,24 @@ final class AppState: ObservableObject {
         reloadLevels()
     }
 
-    func setCurrentUser(_ user: User) {
+    func setCurrentUser(_ user: UserResponse) {
         currentUser = user
     }
 
     func logout() {
-        currentUser = nil
+        Task {
+            try? await AuthService.shared.signOut()
+            currentUser = nil
+        }
+    }
+
+    func loadExistingSession() async {
+        do {
+            let profile = try await AuthService.shared.fetchCurrentUser()
+            currentUser = profile
+        } catch {
+            currentUser = nil
+        }
     }
 
     func purchase(itemId: String) -> Bool {

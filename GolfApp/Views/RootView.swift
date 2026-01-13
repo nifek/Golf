@@ -18,6 +18,9 @@ struct RootView: View {
             }
         }
         .tint(Theme.accent)
+        .task {
+            await appState.loadExistingSession()
+        }
     }
 }
 

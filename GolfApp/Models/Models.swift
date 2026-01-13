@@ -1,11 +1,5 @@
 import Foundation
 
-struct User: Identifiable, Equatable {
-    let id: String
-    var username: String
-    var avatarSystemName: String = "person.crop.circle"
-}
-
 struct Level: Identifiable, Hashable {
     let id: Int
     var name: String
