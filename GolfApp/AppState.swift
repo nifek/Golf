@@ -158,16 +158,27 @@ final class AppState: ObservableObject {
 
     /// Load all skins from API
     func loadShop() async {
+        print("🛍️ [AppState] loadShop() started")
         isLoadingShop = true
         defer { isLoadingShop = false }
         
         do {
+            print("🛍️ [AppState] Fetching skins from API...")
             let skins = try await apiClient.getAllSkins()
+            print("🛍️ [AppState] Got \(skins.count) skins from API")
+            
+            for skin in skins {
+                print("🛍️ [AppState] Skin: id='\(skin.id)', imageUrl='\(skin.imageUrl)', owned=\(skin.owned), equipped=\(skin.equipped)")
+            }
+            
             shopItems = skins.map { ShopItem(from: $0) }
+            print("🛍️ [AppState] Mapped to \(shopItems.count) shop items")
         } catch {
+            print("❌ [AppState] loadShop error: \(error)")
             lastError = error.localizedDescription
             // Fallback to samples if API fails
             if shopItems.isEmpty {
+                print("🛍️ [AppState] Using sample shop items as fallback")
                 shopItems = ShopItem.samples()
             }
         }
@@ -218,19 +229,53 @@ final class AppState: ObservableObject {
     
     /// Load the equipped skin image from Firebase Storage
     func loadEquippedSkinImage() async {
+        print("🎨 [AppState] loadEquippedSkinImage() started")
+        print("🎨 [AppState] equippedSkinId from user: '\(equippedSkinId)'")
+        print("🎨 [AppState] shopItems count: \(shopItems.count)")
+        
         // Find equipped skin
         let equippedItem = shopItems.first { $0.equipped } ?? shopItems.first { $0.id == equippedSkinId }
         
-        guard let item = equippedItem, let url = item.firebaseImageURL else {
+        if let item = equippedItem {
+            print("🎨 [AppState] Found equipped item: id='\(item.id)', imageUrl='\(item.imageUrl)'")
+        } else {
+            print("⚠️ [AppState] No equipped item found in shopItems!")
             equippedSkinImage = nil
             return
         }
         
+        guard let item = equippedItem, let url = item.firebaseImageURL else {
+            print("⚠️ [AppState] No firebaseImageURL for equipped item")
+            equippedSkinImage = nil
+            return
+        }
+        
+        print("🌐 [AppState] Loading equipped skin image from: \(url.absoluteString)")
+        
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            equippedSkinImage = UIImage(data: data)
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📥 [AppState] HTTP Response: \(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    print("❌ [AppState] Non-200 status code!")
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("📄 [AppState] Response body: \(responseString.prefix(500))")
+                    }
+                }
+            }
+            
+            print("📥 [AppState] Received \(data.count) bytes")
+            
+            if let image = UIImage(data: data) {
+                print("✅ [AppState] Successfully created UIImage, size: \(image.size)")
+                equippedSkinImage = image
+            } else {
+                print("❌ [AppState] Failed to create UIImage from data")
+                equippedSkinImage = nil
+            }
         } catch {
-            print("Failed to load skin image: \(error)")
+            print("❌ [AppState] Failed to load skin image: \(error)")
             equippedSkinImage = nil
         }
     }

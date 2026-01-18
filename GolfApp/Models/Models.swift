@@ -48,8 +48,14 @@ struct ShopItem: Identifiable, Hashable {
     
     /// Get the full Firebase Storage download URL
     var firebaseImageURL: URL? {
-        guard !imageUrl.isEmpty else { return nil }
-        return FirebaseStorageHelper.downloadURL(for: imageUrl)
+        guard !imageUrl.isEmpty else {
+            print("⚠️ [ShopItem '\(id)'] imageUrl is empty")
+            return nil
+        }
+        print("🖼️ [ShopItem '\(id)'] Building URL for imageUrl: '\(imageUrl)'")
+        let url = FirebaseStorageHelper.downloadURL(for: imageUrl)
+        print("🖼️ [ShopItem '\(id)'] Result URL: \(url?.absoluteString ?? "nil")")
+        return url
     }
 }
 

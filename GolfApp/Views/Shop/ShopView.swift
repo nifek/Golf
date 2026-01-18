@@ -59,7 +59,12 @@ struct ShopView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
         .task {
+            print("🛒 [ShopView] Loading shop...")
             await appState.loadShop()
+            print("🛒 [ShopView] Shop loaded. Items count: \(appState.shopItems.count)")
+            for item in appState.shopItems {
+                print("🛒 [ShopView] Item: \(item.id), imageUrl: '\(item.imageUrl)', owned: \(item.owned)")
+            }
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") {
@@ -107,27 +112,38 @@ private struct ShopCard: View {
     }
 
     var body: some View {
+        let _ = print("🎨 [ShopCard] Rendering item: '\(item.id)', imageUrl: '\(item.imageUrl)'")
+        
         VStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12).fill(Theme.surface)
                 
                 // Load skin image from Firebase Storage
                 if let url = item.firebaseImageURL {
+                    let _ = print("🌐 [ShopCard '\(item.id)'] Loading image from URL: \(url.absoluteString)")
+                    
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .empty:
+                            let _ = print("⏳ [ShopCard '\(item.id)'] Image loading...")
                             ProgressView()
                                 .tint(.white)
                         case .success(let image):
+                            let _ = print("✅ [ShopCard '\(item.id)'] Image loaded successfully!")
                             image
                                 .resizable()
                                 .scaledToFit()
-                        case .failure:
+                        case .failure(let error):
+                            let _ = print("❌ [ShopCard '\(item.id)'] Image load FAILED: \(error)")
                             // Fallback to default ball icon on error
-                            Image(systemName: "circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .foregroundColor(.white.opacity(0.9))
+                            VStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                                Image(systemName: "circle.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
                         @unknown default:
                             Image(systemName: "circle.fill")
                                 .resizable()
@@ -137,6 +153,7 @@ private struct ShopCard: View {
                     }
                     .padding(20)
                 } else {
+                    let _ = print("⚠️ [ShopCard '\(item.id)'] No firebaseImageURL available")
                     // Default ball for items without image
                     Image(systemName: "circle.fill")
                         .resizable()
