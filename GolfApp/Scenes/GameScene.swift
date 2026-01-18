@@ -11,13 +11,14 @@ private enum PhysicsCategory {
 final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let level: LevelDefinition
     private let levelNumberText: String?
+    private let skinImage: UIImage?  // Custom skin texture
     private let ballRadius: CGFloat = 12
     private let maxStrokeLength: CGFloat = 200
     private let strokePowerScale: CGFloat = 0.25
     private let readyVelocityThreshold: CGFloat = 5
     private let autoStopVelocityThreshold: CGFloat = 1.5
 
-    private var ballNode: SKShapeNode?
+    private var ballNode: SKNode?  // Can be SKShapeNode or SKSpriteNode
     private var holeNode: SKShapeNode?
     private var terrainNodes: [SKShapeNode] = []
     private var aimLine: SKShapeNode?
@@ -35,9 +36,15 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var onLevelComplete: ((Int) -> Void)?
 
-    init(level: LevelDefinition, levelNumber: Int?) {
+    /// Initialize with level definition, level number, and optional skin image
+    /// - Parameters:
+    ///   - level: The level definition
+    ///   - levelNumber: Optional level number to display
+    ///   - skinImage: Optional custom skin image for the ball (loaded from Firebase Storage)
+    init(level: LevelDefinition, levelNumber: Int?, skinImage: UIImage? = nil) {
         self.level = level
         self.levelNumberText = levelNumber.map { "Level \($0)" }
+        self.skinImage = skinImage
         let screenSize = UIScreen.main.bounds.size
         let fallbackSize = CGSize(width: 768, height: 1024)
         super.init(size: screenSize == .zero ? fallbackSize : screenSize)
@@ -183,12 +190,26 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupBall() {
-        let ball = SKShapeNode(circleOfRadius: ballRadius)
-        ball.position = level.playerStartPosition.cgPoint
-        ball.fillColor = .white
-        ball.strokeColor = UIColor(white: 0.2, alpha: 1)
-        ball.lineWidth = 3
-        ball.zPosition = 10
+        let ball: SKNode
+        
+        if let skinTexture = skinImage {
+            // Use custom skin texture
+            let texture = SKTexture(image: skinTexture)
+            let spriteNode = SKSpriteNode(texture: texture)
+            spriteNode.size = CGSize(width: ballRadius * 2, height: ballRadius * 2)
+            spriteNode.position = level.playerStartPosition.cgPoint
+            spriteNode.zPosition = 10
+            ball = spriteNode
+        } else {
+            // Use default white ball
+            let shapeNode = SKShapeNode(circleOfRadius: ballRadius)
+            shapeNode.position = level.playerStartPosition.cgPoint
+            shapeNode.fillColor = .white
+            shapeNode.strokeColor = UIColor(white: 0.2, alpha: 1)
+            shapeNode.lineWidth = 3
+            shapeNode.zPosition = 10
+            ball = shapeNode
+        }
 
         let body = SKPhysicsBody(circleOfRadius: ballRadius)
         body.mass = 0.045
