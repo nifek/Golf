@@ -23,7 +23,7 @@ enum FirebaseStorageHelper {
     /// - Returns: The download URL
     static func getDownloadURL(for path: String) async throws -> URL {
         let storage = Storage.storage()
-        let reference = storage.reference().child(path)
+        let reference = storage.reference(withPath: path)
         return try await reference.downloadURL()
     }
 }
