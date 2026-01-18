@@ -79,6 +79,12 @@ struct LevelPlayView: View {
 
         isLoading = true
         loadError = nil
+        
+        // Ensure skin is loaded before starting level
+        if appState.equippedSkinImage == nil && !appState.shopItems.isEmpty {
+            print("🎮 [LevelPlayView] Skin not loaded, attempting to load...")
+            await appState.loadEquippedSkinImage()
+        }
 
         do {
             let definition = try await withCheckedThrowingContinuation { continuation in
@@ -94,6 +100,11 @@ struct LevelPlayView: View {
             
             // Record start time for time tracking
             levelStartTime = Date()
+            
+            // Log skin info
+            print("🎮 [LevelPlayView] Creating GameScene for level \(level.id)")
+            print("🎮 [LevelPlayView] equippedSkinImage: \(appState.equippedSkinImage != nil ? "loaded (\(appState.equippedSkinImage!.size))" : "nil")")
+            print("🎮 [LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
             
             // Create scene with equipped skin image
             scene = GameScene(

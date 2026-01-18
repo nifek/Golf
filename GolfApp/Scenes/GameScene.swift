@@ -194,6 +194,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if let skinTexture = skinImage {
             // Use custom skin texture
+            print("⚽ [GameScene] Using custom skin texture: \(skinTexture.size)")
             let texture = SKTexture(image: skinTexture)
             let spriteNode = SKSpriteNode(texture: texture)
             spriteNode.size = CGSize(width: ballRadius * 2, height: ballRadius * 2)
@@ -202,6 +203,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             ball = spriteNode
         } else {
             // Use default white ball
+            print("⚽ [GameScene] Using default white ball (no skin image provided)")
             let shapeNode = SKShapeNode(circleOfRadius: ballRadius)
             shapeNode.position = level.playerStartPosition.cgPoint
             shapeNode.fillColor = .white
