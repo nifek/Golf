@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import SwiftUI
 import UIKit
+import FirebaseStorage
 
 @MainActor
 final class AppState: ObservableObject {
@@ -227,7 +228,7 @@ final class AppState: ObservableObject {
         }
     }
     
-    /// Load the equipped skin image from Firebase Storage
+    /// Load the equipped skin image from Firebase Storage using SDK (with proper auth token)
     func loadEquippedSkinImage() async {
         print("🎨 [AppState] loadEquippedSkinImage() started")
         print("🎨 [AppState] equippedSkinId from user: '\(equippedSkinId)'")
@@ -236,33 +237,31 @@ final class AppState: ObservableObject {
         // Find equipped skin
         let equippedItem = shopItems.first { $0.equipped } ?? shopItems.first { $0.id == equippedSkinId }
         
-        if let item = equippedItem {
-            print("🎨 [AppState] Found equipped item: id='\(item.id)', imageUrl='\(item.imageUrl)'")
-        } else {
+        guard let item = equippedItem else {
             print("⚠️ [AppState] No equipped item found in shopItems!")
             equippedSkinImage = nil
             return
         }
         
-        guard let item = equippedItem, let url = item.firebaseImageURL else {
-            print("⚠️ [AppState] No firebaseImageURL for equipped item")
+        print("🎨 [AppState] Found equipped item: id='\(item.id)', imageUrl='\(item.imageUrl)'")
+        
+        guard !item.imageUrl.isEmpty else {
+            print("⚠️ [AppState] imageUrl is empty for equipped item")
             equippedSkinImage = nil
             return
         }
         
-        print("🌐 [AppState] Loading equipped skin image from: \(url.absoluteString)")
-        
         do {
+            // Use Firebase SDK to get download URL with proper token
+            print("🌐 [AppState] Getting download URL from Firebase SDK for path: '\(item.imageUrl)'")
+            let url = try await FirebaseStorageHelper.getDownloadURL(for: item.imageUrl)
+            print("✅ [AppState] Got download URL: \(url.absoluteString)")
+            
+            // Download the image
             let (data, response) = try await URLSession.shared.data(from: url)
             
             if let httpResponse = response as? HTTPURLResponse {
                 print("📥 [AppState] HTTP Response: \(httpResponse.statusCode)")
-                if httpResponse.statusCode != 200 {
-                    print("❌ [AppState] Non-200 status code!")
-                    if let responseString = String(data: data, encoding: .utf8) {
-                        print("📄 [AppState] Response body: \(responseString.prefix(500))")
-                    }
-                }
             }
             
             print("📥 [AppState] Received \(data.count) bytes")
