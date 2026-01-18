@@ -118,7 +118,7 @@ extension ShopItem {
             ShopItem(id: "rainbow", name: "Rainbow Ball", description: "A colorful rainbow golf ball", price: 2000, imageUrl: "skins/rainbow.png", owned: false),
             ShopItem(id: "diamond", name: "Diamond Ball", description: "A sparkling diamond golf ball", price: 5000, imageUrl: "skins/diamond.png", owned: false)
         ]
-    }
+    } 
 }
 
 extension LeaderboardEntry {
