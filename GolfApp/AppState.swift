@@ -228,7 +228,7 @@ final class AppState: ObservableObject {
         }
     }
     
-    /// Load the equipped skin image from Firebase Storage using SDK (with proper auth token)
+    /// Load the equipped skin image from cache (or Firebase Storage if not cached)
     func loadEquippedSkinImage() async {
         print("🎨 [AppState] loadEquippedSkinImage() started")
         print("🎨 [AppState] equippedSkinId from user: '\(equippedSkinId)'")
@@ -251,32 +251,23 @@ final class AppState: ObservableObject {
             return
         }
         
-        do {
-            // Use Firebase SDK to get download URL with proper token
-            print("🌐 [AppState] Getting download URL from Firebase SDK for path: '\(item.imageUrl)'")
-            let url = try await FirebaseStorageHelper.getDownloadURL(for: item.imageUrl)
-            print("✅ [AppState] Got download URL: \(url.absoluteString)")
-            
-            // Download the image
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📥 [AppState] HTTP Response: \(httpResponse.statusCode)")
-            }
-            
-            print("📥 [AppState] Received \(data.count) bytes")
-            
-            if let image = UIImage(data: data) {
-                print("✅ [AppState] Successfully created UIImage, size: \(image.size)")
-                equippedSkinImage = image
-            } else {
-                print("❌ [AppState] Failed to create UIImage from data")
-                equippedSkinImage = nil
-            }
-        } catch {
-            print("❌ [AppState] Failed to load skin image: \(error)")
+        // Use cache to get the image
+        if let cachedImage = await SkinImageCache.shared.getImage(for: item.imageUrl) {
+            print("✅ [AppState] Got equipped skin image from cache")
+            equippedSkinImage = cachedImage
+        } else {
+            print("❌ [AppState] Failed to get equipped skin image")
             equippedSkinImage = nil
         }
+    }
+    
+    /// Preload all skin images into cache for faster display
+    func preloadAllSkinImages() async {
+        let paths = shopItems.compactMap { $0.imageUrl.isEmpty ? nil : $0.imageUrl }
+        guard !paths.isEmpty else { return }
+        
+        print("📦 [AppState] Preloading \(paths.count) skin images...")
+        await SkinImageCache.shared.preloadImages(for: paths)
     }
     
     /// Get skin image URL for a specific skin ID

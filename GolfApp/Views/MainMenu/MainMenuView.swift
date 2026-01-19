@@ -87,8 +87,15 @@ struct MainMenuView: View {
         .navigationBarBackButtonHidden(true)
         .background(Theme.background)
         .task {
-            // Load shop to get equipped skin info, then load the skin image
+            // Load shop to get skin info
             await appState.loadShop()
+            
+            // Preload all skin images into cache (runs in background)
+            Task {
+                await appState.preloadAllSkinImages()
+            }
+            
+            // Load the equipped skin image for game use
             await appState.loadEquippedSkinImage()
         }
     }
