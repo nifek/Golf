@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Form {
@@ -25,7 +26,9 @@ struct SettingsView: View {
             .listRowBackground(Theme.card.opacity(0.85))
 
             Section {
-                Button(role: .destructive) { appState.logout() } label: {
+                Button(role: .destructive) {
+                    handleLogout()
+                } label: {
                     Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             }
@@ -34,6 +37,12 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background)
         .navigationTitle("Settings")
+    }
+    
+    private func handleLogout() {
+        // Dismiss all views first, then logout
+        dismiss()
+        appState.logout()
     }
 }
 
