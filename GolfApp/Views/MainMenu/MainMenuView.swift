@@ -101,12 +101,6 @@ struct MainMenuView: View {
     }
 }
 
-private struct DailyChallengeView: View {
-    var body: some View {
-        PlaceholderScreen(title: "Daily Challenge")
-    }
-}
-
 private struct TutorialView: View {
     var body: some View {
         ScrollView {

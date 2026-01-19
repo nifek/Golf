@@ -31,6 +31,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             strokeLabel?.text = "Strikes: \(strokes)"
         }
     }
+    
+    /// Public accessor for current strokes count
+    var currentStrokes: Int { strokes }
     private var strokeLabel: SKLabelNode?
     private var levelLabel: SKLabelNode?
     
