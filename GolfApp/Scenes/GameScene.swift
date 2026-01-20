@@ -230,7 +230,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             node.position = polygon.position.cgPoint
             node.strokeColor = UIColor(red: 129/255, green: 96/255, blue: 54/255, alpha: 1)
             node.fillColor = UIColor(red: 164/255, green: 124/255, blue: 72/255, alpha: 1)
-            node.lineWidth = 2
+            node.strokeColor = node.fillColor
+            node.lineWidth = 0
+            node.isAntialiased = false
             node.zPosition = 3
 
             let body = SKPhysicsBody(edgeLoopFrom: path)
