@@ -1,8 +1,30 @@
 import SpriteKit
 import SwiftUI
 
+// MARK: - Disable Back Swipe Gesture Helper
+struct DisableSwipeBackGesture: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> DisableSwipeBackViewController {
+        DisableSwipeBackViewController()
+    }
+    
+    func updateUIViewController(_ uiViewController: DisableSwipeBackViewController, context: Context) {}
+}
+
+class DisableSwipeBackViewController: UIViewController {
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+}
+
 struct LevelPlayView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     let level: Level
 
     @State private var scene: GameScene?
@@ -12,6 +34,7 @@ struct LevelPlayView: View {
     @State private var levelStartTime: Date?
     @State private var completionResult: LevelProgressResponse?
     @State private var isSubmitting = false
+    @State private var showMenuConfirmation = false
 
     var body: some View {
         Group {
@@ -19,6 +42,44 @@ struct LevelPlayView: View {
                 ZStack {
                     SpriteView(scene: scene)
                         .ignoresSafeArea(edges: .all)
+                    
+                    // HUD overlay (menu button + level indicator)
+                    if completedStars == nil {
+                        VStack {
+                            HStack(alignment: .center, spacing: 12) {
+                                // Menu button
+                                Button {
+                                    showMenuConfirmation = true
+                                } label: {
+                                    Image(systemName: "line.3.horizontal")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(
+                                            Circle()
+                                                .fill(Color.black.opacity(0.5))
+                                        )
+                                }
+                                
+                                // Level indicator
+                                Text("Level \(level.id)")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.black.opacity(0.5))
+                                    )
+                                
+                                Spacer()
+                            }
+                            .padding(.leading, 16)
+                            .padding(.top, 54)
+                            
+                            Spacer()
+                        }
+                    }
                     
                     if let completedStars {
                         LevelCompleteOverlay(
@@ -31,6 +92,7 @@ struct LevelPlayView: View {
                         )
                     }
                 }
+                .background(DisableSwipeBackGesture())
             } else if let loadError {
                 VStack(spacing: 16) {
                     Text("Unable to load level")
@@ -60,11 +122,18 @@ struct LevelPlayView: View {
                 .background(Theme.background.ignoresSafeArea())
             }
         }
-        .navigationTitle("Level \(level.id)")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(completedStars != nil)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .task {
             await loadSceneIfNeeded()
+        }
+        .confirmationDialog("Menu", isPresented: $showMenuConfirmation, titleVisibility: .visible) {
+            Button("Exit Level", role: .destructive) {
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to exit? Your progress on this attempt will be lost.")
         }
     }
 
@@ -106,10 +175,10 @@ struct LevelPlayView: View {
             print("🎮 [LevelPlayView] equippedSkinImage: \(appState.equippedSkinImage != nil ? "loaded (\(appState.equippedSkinImage!.size))" : "nil")")
             print("🎮 [LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
             
-            // Create scene with equipped skin image
+            // Create scene with equipped skin image (no levelNumber to avoid duplicate label)
             scene = GameScene(
                 level: definition,
-                levelNumber: level.id,
+                levelNumber: nil,
                 skinImage: appState.equippedSkinImage
             )
             scene?.onLevelComplete = { stars in
