@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Auth Responses
-
 struct CheckUserResponse: Codable {
     let exists: Bool
     let firebaseUid: String
@@ -10,8 +8,6 @@ struct CheckUserResponse: Codable {
 struct SyncUserRequest: Codable {
     let username: String
 }
-
-// MARK: - User
 
 struct UserResponse: Codable, Equatable {
     let id: Int
@@ -23,7 +19,6 @@ struct UserResponse: Codable, Equatable {
     let coins: Int
     let equippedSkin: String
     
-    // Provide defaults for backward compatibility
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
@@ -52,8 +47,6 @@ struct AvatarUploadResponse: Codable {
     let message: String
 }
 
-// MARK: - Level Progress
-
 struct LevelCompleteRequest: Codable {
     let levelNumber: Int
     let timeToPassMs: Int
@@ -76,14 +69,12 @@ struct UserStatsResponse: Codable, Equatable {
     let totalStars: Int
 }
 
-// MARK: - Skins
-
 struct SkinResponse: Codable, Equatable, Identifiable {
     let id: String
     let name: String
     let description: String
     let price: Int
-    let imageUrl: String  // Path in Firebase Storage, e.g., "skins/fire.png"
+    let imageUrl: String
     let owned: Bool
     let equipped: Bool
 }
@@ -103,8 +94,6 @@ struct BuySkinResponse: Codable {
 struct EquipSkinRequest: Codable {
     let skinId: String
 }
-
-// MARK: - Daily Challenge
 
 struct DailyChallengeResponse: Codable, Equatable {
     let id: Int
@@ -151,8 +140,6 @@ struct DailyChallengeLeaderboardEntry: Codable, Equatable, Identifiable {
     var id: Int { rank }
 }
 
-// MARK: - Global Leaderboard
-
 struct GlobalLeaderboardEntryResponse: Codable, Equatable, Identifiable {
     let rank: Int
     let userId: Int
@@ -164,8 +151,6 @@ struct GlobalLeaderboardEntryResponse: Codable, Equatable, Identifiable {
     
     var id: Int { rank }
 }
-
-// MARK: - API Error
 
 struct APIErrorResponse: Codable {
     let timestamp: String

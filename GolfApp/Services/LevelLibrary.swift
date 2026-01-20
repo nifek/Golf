@@ -18,13 +18,11 @@ enum LevelLibraryError: LocalizedError {
 }
 
 struct LevelLibrary {
-    // Possible subdirectory paths where level JSONs might be located in the bundle
     private let possibleDirectories = ["Levels", "Views/Levels/Levels", nil]
     private let levelFileExtension = "json"
     private let decoder = JSONDecoder()
 
     func availableLevels() -> [Level] {
-        // Try each possible directory to find level files
         var urls: [URL] = []
         
         for directory in possibleDirectories {
@@ -32,7 +30,6 @@ struct LevelLibrary {
                 forResourcesWithExtension: levelFileExtension,
                 subdirectory: directory
             ) {
-                // Filter only level_X.json files
                 let levelUrls = foundUrls.filter { url in
                     let name = url.deletingPathExtension().lastPathComponent
                     return name.hasPrefix("level_")
@@ -52,7 +49,6 @@ struct LevelLibrary {
 
         return urls
             .compactMap { url -> (Int, URL, LevelDefinition)? in
-                // Extract level number from filename (e.g., "level_1.json" -> 1)
                 let resourceName = url.deletingPathExtension().lastPathComponent
                 guard let levelNumber = extractLevelNumber(from: resourceName) else {
                     print("⚠️ [LevelLibrary] Could not extract level number from: \(resourceName)")
@@ -64,7 +60,7 @@ struct LevelLibrary {
                 }
                 return (levelNumber, url, definition)
             }
-            .sorted { $0.0 < $1.0 } // Sort by level number
+            .sorted { $0.0 < $1.0 }
             .map { levelNumber, url, definition in
                 let resourceName = url.deletingPathExtension().lastPathComponent
                 return Level(
@@ -72,15 +68,13 @@ struct LevelLibrary {
                     name: definition.levelName,
                     difficulty: "Par \(definition.maxStrikesForThreeStars)",
                     stars: 0,
-                    isLocked: levelNumber > 1, // Only level 1 is unlocked by default
+                    isLocked: levelNumber > 1,
                     resourceName: resourceName
                 )
             }
     }
     
-    /// Extract level number from filename (e.g., "level_1" -> 1, "level_123" -> 123)
     private func extractLevelNumber(from filename: String) -> Int? {
-        // Match pattern "level_X" where X is a number
         let pattern = "level_(\\d+)"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []),
               let match = regex.firstMatch(in: filename, options: [], range: NSRange(filename.startIndex..., in: filename)),
@@ -98,7 +92,6 @@ struct LevelLibrary {
     }
 
     func loadDefinition(named resourceName: String) throws -> LevelDefinition {
-        // Try to find the file in possible directories
         for directory in possibleDirectories {
             if let url = Bundle.main.url(
                 forResource: resourceName,
@@ -109,7 +102,6 @@ struct LevelLibrary {
             }
         }
         
-        // Also try without subdirectory
         if let url = Bundle.main.url(
             forResource: resourceName,
             withExtension: levelFileExtension
@@ -122,7 +114,6 @@ struct LevelLibrary {
         )
     }
     
-    /// Load a level definition from raw JSON data (used for daily challenges)
     func loadDefinition(from data: Data) throws -> LevelDefinition {
         do {
             return try decoder.decode(LevelDefinition.self, from: data)

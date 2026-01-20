@@ -76,7 +76,6 @@ private struct LeaderboardRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Rank
             ZStack {
                 if let icon = rankIcon {
                     Image(systemName: icon)
@@ -90,7 +89,6 @@ private struct LeaderboardRow: View {
             }
             .frame(width: 32)
             
-            // Avatar
             if let avatarUrl = entry.avatarUrl, let url = URL(string: avatarUrl) {
                 AsyncImage(url: url) { image in
                     image
@@ -108,7 +106,6 @@ private struct LeaderboardRow: View {
                     .foregroundColor(.white)
             }
             
-            // Username and stars
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.username)
                     .font(.body.weight(isCurrentUser ? .bold : .regular))
@@ -127,7 +124,6 @@ private struct LeaderboardRow: View {
             
             Spacer()
             
-            // Score and reward
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(entry.score)")
                     .font(.headline)

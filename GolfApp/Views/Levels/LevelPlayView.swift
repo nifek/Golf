@@ -1,7 +1,5 @@
 import SpriteKit
 import SwiftUI
-
-// MARK: - Disable Back Swipe Gesture Helper
 struct DisableSwipeBackGesture: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> DisableSwipeBackViewController {
         DisableSwipeBackViewController()
@@ -44,11 +42,9 @@ struct LevelPlayView: View {
                     SpriteView(scene: scene)
                         .ignoresSafeArea(edges: .all)
                     
-                    // HUD overlay (menu button + level indicator + strokes)
                     if completedStars == nil {
                         VStack {
                             HStack(alignment: .center, spacing: 12) {
-                                // Menu button
                                 Button {
                                     showMenuSheet = true
                                 } label: {
@@ -62,7 +58,6 @@ struct LevelPlayView: View {
                                         )
                                 }
                                 
-                                // Level indicator
                                 Text("Level \(level.id)")
                                     .font(.system(size: 16, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
@@ -75,7 +70,6 @@ struct LevelPlayView: View {
                                 
                                 Spacer()
                                 
-                                // Strokes indicator (same style as level)
                                 HStack(spacing: 4) {
                                     Image(systemName: "figure.golf")
                                         .font(.system(size: 14, weight: .semibold))
@@ -144,11 +138,9 @@ struct LevelPlayView: View {
             await loadSceneIfNeeded()
         }
         .onAppear {
-            // Switch to game music
             AudioManager.shared.playMusic(.game)
         }
         .onDisappear {
-            // Switch back to menu music
             AudioManager.shared.playMusic(.menu)
         }
         .sheet(isPresented: $showMenuSheet) {
@@ -191,7 +183,6 @@ struct LevelPlayView: View {
         isLoading = true
         loadError = nil
         
-        // Ensure skin is loaded before starting level
         if appState.equippedSkinImage == nil && !appState.shopItems.isEmpty {
             print("🎮 [LevelPlayView] Skin not loaded, attempting to load...")
             await appState.loadEquippedSkinImage()
@@ -209,15 +200,12 @@ struct LevelPlayView: View {
                 }
             }
             
-            // Record start time for time tracking
             levelStartTime = Date()
             
-            // Log skin info
             print("🎮 [LevelPlayView] Creating GameScene for level \(level.id)")
             print("🎮 [LevelPlayView] equippedSkinImage: \(appState.equippedSkinImage != nil ? "loaded (\(appState.equippedSkinImage!.size))" : "nil")")
             print("🎮 [LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
             
-            // Create scene with equipped skin image (no levelNumber to avoid duplicate label)
             let newScene = GameScene(
                 level: definition,
                 levelNumber: nil,
@@ -243,19 +231,16 @@ struct LevelPlayView: View {
     
     @MainActor
     private func handleLevelComplete(stars: Int) async {
-        // Calculate time taken
         let timeToPassMs: Int
         if let startTime = levelStartTime {
             let elapsed = Date().timeIntervalSince(startTime)
             timeToPassMs = Int(elapsed * 1000)
         } else {
-            timeToPassMs = 60000 // Default to 60 seconds if start time wasn't recorded
+            timeToPassMs = 60000
         }
         
-        // Show stars immediately
         completedStars = stars
         
-        // Submit to backend
         isSubmitting = true
         if let result = await appState.completeLevel(
             levelNumber: level.id,
@@ -268,7 +253,6 @@ struct LevelPlayView: View {
     }
 }
 
-// MARK: - Game Menu Sheet
 private struct GameMenuSheet: View {
     @EnvironmentObject private var appState: AppState
     let levelId: Int
@@ -277,7 +261,6 @@ private struct GameMenuSheet: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            // Title
             Text("Level \(levelId)")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(.primary)
@@ -290,9 +273,7 @@ private struct GameMenuSheet: View {
             Divider()
                 .padding(.horizontal)
             
-            // Audio Controls
             HStack(spacing: 16) {
-                // Music Toggle
                 Button {
                     appState.musicEnabled.toggle()
                     AudioManager.shared.isMusicEnabled = appState.musicEnabled
@@ -311,7 +292,6 @@ private struct GameMenuSheet: View {
                     )
                 }
                 
-                // Sound Toggle
                 Button {
                     appState.soundEffectsEnabled.toggle()
                     AudioManager.shared.isSoundEnabled = appState.soundEffectsEnabled
@@ -335,7 +315,6 @@ private struct GameMenuSheet: View {
             Divider()
                 .padding(.horizontal)
             
-            // Action Buttons
             VStack(spacing: 12) {
                 Button {
                     onRetry()
@@ -379,7 +358,6 @@ private struct GameMenuSheet: View {
     }
 }
 
-// MARK: - Level Complete Overlay
 private struct LevelCompleteOverlay: View {
     let stars: Int
     let score: Int?
@@ -408,7 +386,6 @@ private struct LevelCompleteOverlay: View {
                 }
                 .padding(.vertical, 8)
                 
-                // Show score if available
                 if let score = score {
                     Text("Score: \(score)")
                         .font(.title2.weight(.semibold))
@@ -424,10 +401,9 @@ private struct LevelCompleteOverlay: View {
                 
                 Button("Go to Menu") {
                     onGoToMenu()
-                    // Dismiss twice to go back to menu (LevelPlayView -> LevelsView -> MainMenuView)
                     Task { @MainActor in
                         dismiss()
-                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                        try? await Task.sleep(nanoseconds: 100_000_000)
                         dismiss()
                     }
                 }

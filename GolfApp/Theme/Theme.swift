@@ -1,12 +1,11 @@
 import SwiftUI
 
 enum Theme {
-    // Base palette tuned to the mockups
-    static let background = Color(red: 0.03, green: 0.27, blue: 0.22)   // deep green
-    static let surface = Color(red: 0.15, green: 0.43, blue: 0.36)      // mid green
-    static let card = Color(red: 0.24, green: 0.56, blue: 0.46)         // lighter card
-    static let accent = Color(red: 0.83, green: 0.91, blue: 0.86)       // pale mint text
-    static let gold = Color(red: 0.95, green: 0.84, blue: 0.40)         // stars
+    static let background = Color(red: 0.03, green: 0.27, blue: 0.22)
+    static let surface = Color(red: 0.15, green: 0.43, blue: 0.36)
+    static let card = Color(red: 0.24, green: 0.56, blue: 0.46)
+    static let accent = Color(red: 0.83, green: 0.91, blue: 0.86)
+    static let gold = Color(red: 0.95, green: 0.84, blue: 0.40)
     static let shadow = Color.black.opacity(0.25)
 }
 

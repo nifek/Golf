@@ -1,14 +1,10 @@
 import Foundation
 import FirebaseAuth
 
-// MARK: - API Configuration
-
 enum APIConfig {
     static let baseURL = "http://localhost:8089"
     static let apiVersion = "/api/v1"
 }
-
-// MARK: - API Errors
 
 enum APIError: LocalizedError {
     case notAuthenticated
@@ -51,16 +47,12 @@ enum APIError: LocalizedError {
     }
 }
 
-// MARK: - HTTP Method
-
 enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
     case put = "PUT"
     case delete = "DELETE"
 }
-
-// MARK: - API Client
 
 actor APIClient {
     static let shared = APIClient()
@@ -79,8 +71,6 @@ actor APIClient {
         self.encoder = JSONEncoder()
     }
     
-    // MARK: - Token Retrieval
-    
     private func getFirebaseToken() async throws -> String {
         guard let user = Auth.auth().currentUser else {
             throw APIError.notAuthenticated
@@ -92,8 +82,6 @@ actor APIClient {
             throw APIError.notAuthenticated
         }
     }
-    
-    // MARK: - Generic Request
     
     func request<T: Decodable>(
         endpoint: String,
@@ -157,8 +145,6 @@ actor APIClient {
         }
     }
     
-    // MARK: - Multipart Upload
-    
     func uploadFile(
         endpoint: String,
         fileData: Data,
@@ -221,77 +207,58 @@ actor APIClient {
         }
     }
     
-    // MARK: - Skins Endpoints
-    
-    /// Get all available skins with ownership status
     func getAllSkins() async throws -> [SkinResponse] {
         try await request(endpoint: "/skins")
     }
     
-    /// Get owned skins only
     func getOwnedSkins() async throws -> [SkinResponse] {
         try await request(endpoint: "/skins/owned")
     }
     
-    /// Get currently equipped skin
     func getEquippedSkin() async throws -> SkinResponse {
         try await request(endpoint: "/skins/equipped")
     }
     
-    /// Purchase a skin with coins
     func buySkin(skinId: String) async throws -> BuySkinResponse {
         let body = BuySkinRequest(skinId: skinId)
         return try await request(endpoint: "/skins/buy", method: .post, body: body)
     }
     
-    /// Equip an owned skin
     func equipSkin(skinId: String) async throws -> SkinResponse {
         let body = EquipSkinRequest(skinId: skinId)
         return try await request(endpoint: "/skins/equip", method: .post, body: body)
     }
     
-    // MARK: - Level Progress Endpoints
-    
-    /// Submit level completion (score calculated on backend)
     func completeLevel(levelNumber: Int, timeToPassMs: Int, stars: Int) async throws -> LevelProgressResponse {
         let body = LevelCompleteRequest(levelNumber: levelNumber, timeToPassMs: timeToPassMs, stars: stars)
         return try await request(endpoint: "/levels/complete", method: .post, body: body)
     }
     
-    /// Get all level progress for current user
     func getAllLevelProgress() async throws -> [LevelProgressResponse] {
         try await request(endpoint: "/levels")
     }
     
-    /// Get specific level progress
     func getLevelProgress(levelNumber: Int) async throws -> LevelProgressResponse {
         try await request(endpoint: "/levels/\(levelNumber)")
     }
     
-    /// Get user stats
     func getUserStats() async throws -> UserStatsResponse {
         try await request(endpoint: "/levels/stats")
     }
     
-    // MARK: - Daily Challenge Endpoints
-    
-    /// Get today's daily challenge
     func getTodayChallenge() async throws -> DailyChallengeResponse {
         try await request(endpoint: "/daily-challenge")
     }
     
-    /// Submit daily challenge attempt
     func completeDailyChallenge(timeToPassMs: Int, strokes: Int, stars: Int) async throws -> DailyChallengeAttemptResponse {
         let body = DailyChallengeCompleteRequest(timeToPassMs: timeToPassMs, strokes: strokes, stars: stars)
         return try await request(endpoint: "/daily-challenge/complete", method: .post, body: body)
     }
     
-    /// Get today's leaderboard
     func getDailyChallengeLeaderboard(limit: Int = 100) async throws -> [DailyChallengeLeaderboardEntry] {
         try await request(endpoint: "/daily-challenge/leaderboard?limit=\(limit)")
     }
 
-    /// Get global leaderboard
     func getGlobalLeaderboard(limit: Int = 100) async throws -> [GlobalLeaderboardEntryResponse] {
         try await request(endpoint: "/users/leaderboard?limit=\(limit)")
     }

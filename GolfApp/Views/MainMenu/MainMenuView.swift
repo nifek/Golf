@@ -6,9 +6,7 @@ struct MainMenuView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                // Top bar with coins and user info
                 HStack {
-                    // Coins display
                     HStack(spacing: 6) {
                         Image(systemName: "creditcard.circle.fill")
                             .foregroundColor(Theme.gold)
@@ -22,7 +20,6 @@ struct MainMenuView: View {
                     
                     Spacer()
                     
-                    // User profile
                     NavigationLink(destination: SettingsView()) {
                         HStack(spacing: 8) {
                             Text(appState.currentUser?.username ?? "")
@@ -87,19 +84,15 @@ struct MainMenuView: View {
         .navigationBarBackButtonHidden(true)
         .background(Theme.background)
         .task {
-            // Load shop to get skin info
             await appState.loadShop()
             
-            // Preload all skin images into cache (runs in background)
             Task {
                 await appState.preloadAllSkinImages()
             }
             
-            // Load the equipped skin image for game use
             await appState.loadEquippedSkinImage()
         }
         .onAppear {
-            // Play menu music and sync audio settings
             AudioManager.shared.syncWithAppState(
                 musicEnabled: appState.musicEnabled,
                 soundEnabled: appState.soundEffectsEnabled

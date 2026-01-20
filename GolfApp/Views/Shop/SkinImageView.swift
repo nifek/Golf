@@ -1,6 +1,4 @@
 import SwiftUI
-
-/// A view that loads a skin image from Firebase Storage with caching support
 struct SkinImageView: View {
     let storagePath: String
     let skinId: String
@@ -19,7 +17,6 @@ struct SkinImageView: View {
                 ProgressView()
                     .tint(.white)
             } else {
-                // Error state - show placeholder
                 VStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption)
@@ -46,7 +43,6 @@ struct SkinImageView: View {
         
         print("🖼️ [SkinImageView '\(skinId)'] Loading from path: '\(storagePath)'")
         
-        // Use the cache to get the image
         if let cachedImage = await SkinImageCache.shared.getImage(for: storagePath) {
             await MainActor.run {
                 self.image = cachedImage

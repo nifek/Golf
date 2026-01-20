@@ -1,16 +1,12 @@
 import AVFoundation
 import Combine
 import Foundation
-
-/// Manages background music and sound effects for the app
 final class AudioManager: ObservableObject {
     static let shared = AudioManager()
     
-    // MARK: - Audio Players
     private var musicPlayer: AVAudioPlayer?
     private var soundEffectPlayers: [String: AVAudioPlayer] = [:]
     
-    // MARK: - Settings (bound to AppState)
     @Published var isMusicEnabled: Bool = true {
         didSet {
             if isMusicEnabled {
@@ -23,28 +19,23 @@ final class AudioManager: ObservableObject {
     
     @Published var isSoundEnabled: Bool = true
     
-    // MARK: - Music Types
     enum MusicType: String {
         case menu = "menu_music"
         case game = "game_music"
     }
     
-    // MARK: - Sound Effect Types
     enum SoundEffect: String {
         case wallHit = "wall_hit"
         case levelComplete = "level_complete"
         case ballStroke = "ball_stroke"
     }
     
-    // MARK: - Current State
     private var currentMusicType: MusicType?
     
     private init() {
         setupAudioSession()
         preloadSoundEffects()
     }
-    
-    // MARK: - Setup
     
     private func setupAudioSession() {
         do {
@@ -56,7 +47,6 @@ final class AudioManager: ObservableObject {
     }
     
     private func preloadSoundEffects() {
-        // Preload all sound effects for faster playback
         for effect in [SoundEffect.wallHit, .levelComplete, .ballStroke] {
             if let url = Bundle.main.url(forResource: effect.rawValue, withExtension: "wav") {
                 do {
@@ -73,11 +63,7 @@ final class AudioManager: ObservableObject {
         }
     }
     
-    // MARK: - Music Control
-    
-    /// Play background music of the specified type
     func playMusic(_ type: MusicType, loop: Bool = true) {
-        // Don't restart if already playing the same music
         if currentMusicType == type && musicPlayer?.isPlaying == true {
             return
         }
@@ -91,7 +77,7 @@ final class AudioManager: ObservableObject {
         
         do {
             musicPlayer = try AVAudioPlayer(contentsOf: url)
-            musicPlayer?.numberOfLoops = loop ? -1 : 0 // -1 = infinite loop
+            musicPlayer?.numberOfLoops = loop ? -1 : 0
             musicPlayer?.volume = 0.5
             currentMusicType = type
             
@@ -104,26 +90,22 @@ final class AudioManager: ObservableObject {
         }
     }
     
-    /// Stop the current background music
     func stopMusic() {
         musicPlayer?.stop()
         musicPlayer = nil
         currentMusicType = nil
     }
     
-    /// Pause the current background music
     func pauseMusic() {
         musicPlayer?.pause()
     }
     
-    /// Resume the current background music
     func resumeMusic() {
         if isMusicEnabled {
             musicPlayer?.play()
         }
     }
     
-    /// Fade out music over a duration
     func fadeOutMusic(duration: TimeInterval = 1.0, completion: (() -> Void)? = nil) {
         guard let player = musicPlayer else {
             completion?()
@@ -147,20 +129,15 @@ final class AudioManager: ObservableObject {
         }
     }
     
-    // MARK: - Sound Effects
-    
-    /// Play a sound effect
     func playSound(_ effect: SoundEffect) {
         guard isSoundEnabled else { return }
         
-        // Use preloaded player if available
         if let player = soundEffectPlayers[effect.rawValue] {
             player.currentTime = 0
             player.play()
             return
         }
         
-        // Fallback: load and play
         guard let url = Bundle.main.url(forResource: effect.rawValue, withExtension: "wav") else {
             print("⚠️ [AudioManager] Sound file not found: \(effect.rawValue).wav")
             return
@@ -169,14 +146,11 @@ final class AudioManager: ObservableObject {
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.play()
-            // Cache for future use
             soundEffectPlayers[effect.rawValue] = player
         } catch {
             print("❌ [AudioManager] Failed to play sound: \(error)")
         }
     }
-    
-    // MARK: - Sync with AppState
     
     func syncWithAppState(musicEnabled: Bool, soundEnabled: Bool) {
         self.isMusicEnabled = musicEnabled

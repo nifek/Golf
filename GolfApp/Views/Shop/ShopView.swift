@@ -113,12 +113,10 @@ private struct ShopCard: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 12).fill(Theme.surface)
                 
-                // Load skin image from Firebase Storage using SDK (with proper token)
                 if !item.imageUrl.isEmpty {
                     SkinImageView(storagePath: item.imageUrl, skinId: item.id)
                         .padding(20)
                 } else {
-                    // Default ball for items without image path
                     Image(systemName: "circle.fill")
                         .resizable()
                         .scaledToFit()
@@ -126,7 +124,6 @@ private struct ShopCard: View {
                         .padding(24)
                 }
                 
-                // Equipped badge
                 if item.equipped {
                     VStack {
                         HStack {

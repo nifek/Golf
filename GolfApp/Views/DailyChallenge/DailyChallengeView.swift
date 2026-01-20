@@ -17,7 +17,6 @@ struct DailyChallengeView: View {
             } else if let error = loadError {
                 errorView(error)
             } else if let challenge = challenge {
-                // Tab selector
                 Picker("Tab", selection: $selectedTab) {
                     Text("Play").tag(ChallengeTab.play)
                     Text("Leaderboard").tag(ChallengeTab.leaderboard)
@@ -105,14 +104,10 @@ struct DailyChallengeView: View {
     }
 }
 
-// MARK: - Tab Enum
-
 private enum ChallengeTab {
     case play
     case leaderboard
 }
-
-// MARK: - Play Tab
 
 private struct PlayTab: View {
     let challenge: DailyChallengeResponse
@@ -121,7 +116,6 @@ private struct PlayTab: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Challenge info card
                 VStack(spacing: 16) {
                     Text(challenge.title ?? "Today's Challenge")
                         .font(.title2.weight(.bold))
@@ -137,7 +131,6 @@ private struct PlayTab: View {
                     Divider()
                         .background(Color.white.opacity(0.3))
                     
-                    // Stats
                     HStack(spacing: 32) {
                         StatItem(
                             icon: "person.2.fill",
@@ -166,7 +159,6 @@ private struct PlayTab: View {
                         .fill(Theme.card.opacity(0.8))
                 )
                 
-                // Play button
                 NavigationLink(destination: DailyChallengePlayView(challenge: challenge)) {
                     HStack {
                         Image(systemName: "play.fill")
@@ -176,7 +168,6 @@ private struct PlayTab: View {
                 .buttonStyle(FilledButtonStyle())
                 .frame(maxWidth: 250)
                 
-                // Reward tiers info
                 RewardTiersCard()
             }
             .padding()
@@ -249,8 +240,6 @@ private struct RewardRow: View {
     }
 }
 
-// MARK: - Leaderboard Tab
-
 private struct LeaderboardTab: View {
     let leaderboard: [DailyChallengeLeaderboardEntry]
     let currentUserId: Int?
@@ -299,13 +288,11 @@ private struct LeaderboardRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Rank
             Text("\(entry.rank)")
                 .font(.headline)
                 .foregroundColor(rankColor)
                 .frame(width: 32)
             
-            // Username and stars
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.username)
                     .font(.body.weight(isCurrentUser ? .bold : .regular))
@@ -322,7 +309,6 @@ private struct LeaderboardRow: View {
             
             Spacer()
             
-            // Score and reward
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(entry.score)")
                     .font(.headline)
@@ -340,8 +326,6 @@ private struct LeaderboardRow: View {
         .padding(.vertical, 4)
     }
 }
-
-// MARK: - Play View
 
 struct DailyChallengePlayView: View {
     let challenge: DailyChallengeResponse
@@ -509,14 +493,12 @@ struct DailyChallengePlayView: View {
             
             levelStartTime = Date()
             
-            // Create scene with equipped skin
             let gameScene = GameScene(
                 level: definition,
                 levelNumber: nil,
                 skinImage: appState.equippedSkinImage
             )
             
-            // Capture strokes from GameScene (we need to track this)
             gameScene.onLevelComplete = { stars in
                 Task { @MainActor in
                     await handleCompletion(stars: stars, strokes: gameScene.currentStrokes)
@@ -551,7 +533,6 @@ struct DailyChallengePlayView: View {
     
     @MainActor
     private func handleCompletion(stars: Int, strokes: Int) async {
-        // Calculate time
         let timeToPassMs: Int
         if let start = levelStartTime {
             timeToPassMs = Int(Date().timeIntervalSince(start) * 1000)
@@ -577,8 +558,6 @@ struct DailyChallengePlayView: View {
         isSubmitting = false
     }
 }
-
-// MARK: - Completion Overlay
 
 private struct CompletionOverlay: View {
     let stars: Int
@@ -642,8 +621,6 @@ private struct CompletionOverlay: View {
         }
     }
 }
-
-// MARK: - Daily Challenge Menu Sheet
 
 private struct DailyChallengeMenuSheet: View {
     @EnvironmentObject private var appState: AppState

@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Level Model
-
 struct Level: Identifiable, Hashable {
     let id: Int
     var name: String
@@ -13,18 +11,15 @@ struct Level: Identifiable, Hashable {
     var bestScore: Int?
 }
 
-// MARK: - Shop Item (maps to SkinResponse from API)
-
 struct ShopItem: Identifiable, Hashable {
     let id: String
     var name: String
     var description: String
     var price: Int
-    var imageUrl: String  // Firebase Storage path, e.g., "skins/fire.png"
+    var imageUrl: String
     var owned: Bool
     var equipped: Bool
     
-    /// Create from API response
     init(from skin: SkinResponse) {
         self.id = skin.id
         self.name = skin.name
@@ -35,7 +30,6 @@ struct ShopItem: Identifiable, Hashable {
         self.equipped = skin.equipped
     }
     
-    /// Create locally
     init(id: String, name: String, description: String = "", price: Int, imageUrl: String = "", owned: Bool, equipped: Bool = false) {
         self.id = id
         self.name = name
@@ -46,7 +40,6 @@ struct ShopItem: Identifiable, Hashable {
         self.equipped = equipped
     }
     
-    /// Get the full Firebase Storage download URL
     var firebaseImageURL: URL? {
         guard !imageUrl.isEmpty else {
             print("⚠️ [ShopItem '\(id)'] imageUrl is empty")
@@ -58,8 +51,6 @@ struct ShopItem: Identifiable, Hashable {
         return url
     }
 }
-
-// MARK: - Leaderboard Entry
 
 struct LeaderboardEntry: Identifiable, Hashable {
     let id: Int
@@ -73,7 +64,6 @@ struct LeaderboardEntry: Identifiable, Hashable {
     var coinsReward: Int?
     var coins: Int?
     
-    /// Create from Daily Challenge Leaderboard API response
     init(from entry: DailyChallengeLeaderboardEntry) {
         self.id = entry.rank
         self.rank = entry.rank
@@ -87,7 +77,6 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.coins = nil
     }
 
-    /// Create from Global Leaderboard API response
     init(from entry: GlobalLeaderboardEntryResponse) {
         self.id = entry.rank
         self.rank = entry.rank
@@ -101,7 +90,6 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.coins = entry.coins
     }
     
-    /// Create locally (for samples)
     init(rank: Int, username: String, score: Int) {
         self.id = rank
         self.rank = rank
@@ -116,11 +104,7 @@ struct LeaderboardEntry: Identifiable, Hashable {
     }
 }
 
-// MARK: - Sample Data
-
 extension Level {
-    /// Levels start with 0 stars and locked (except level 1) - progress is loaded from API
-    /// This generates levels dynamically based on the count parameter
     static func samples(count: Int = 9) -> [Level] {
         (1...count).map { levelNumber in
             Level(
@@ -134,7 +118,6 @@ extension Level {
         }
     }
     
-    /// Estimated par for each level (used for fallback samples)
     private static func parForLevel(_ level: Int) -> Int {
         switch level {
         case 1: return 2

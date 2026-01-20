@@ -11,14 +11,14 @@ private enum PhysicsCategory {
 final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let level: LevelDefinition
     private let levelNumberText: String?
-    private let skinImage: UIImage?  // Custom skin texture
+    private let skinImage: UIImage?
     private let ballRadius: CGFloat = 12
     private let maxStrokeLength: CGFloat = 200
     private let strokePowerScale: CGFloat = 0.25
     private let readyVelocityThreshold: CGFloat = 5
     private let autoStopVelocityThreshold: CGFloat = 1.5
 
-    private var ballNode: SKNode?  // Can be SKShapeNode or SKSpriteNode
+    private var ballNode: SKNode?
     private var holeNode: SKShapeNode?
     private var terrainNodes: [SKShapeNode] = []
     private var aimLine: SKShapeNode?
@@ -32,18 +32,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    /// Public accessor for current strokes count
     var currentStrokes: Int { strokes }
     private var levelLabel: SKLabelNode?
     
     var onLevelComplete: ((Int) -> Void)?
     var onStrokesChanged: ((Int) -> Void)?
 
-    /// Initialize with level definition, level number, and optional skin image
-    /// - Parameters:
-    ///   - level: The level definition
-    ///   - levelNumber: Optional level number to display
-    ///   - skinImage: Optional custom skin image for the ball (loaded from Firebase Storage)
     init(level: LevelDefinition, levelNumber: Int?, skinImage: UIImage? = nil) {
         self.level = level
         self.levelNumberText = levelNumber.map { "Level \($0)" }
@@ -102,8 +96,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
-        // HUD is now handled by SwiftUI overlay
-        // Only setup level label if needed (currently not used)
         if let levelText = levelNumberText {
             let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
             levelNode.text = levelText
@@ -119,7 +111,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             levelLabel = nil
         }
         
-        // Trigger initial strokes callback
         onStrokesChanged?(strokes)
     }
 
@@ -186,7 +177,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let ball: SKNode
         
         if let skinTexture = skinImage {
-            // Use custom skin texture
             print("⚽ [GameScene] Using custom skin texture: \(skinTexture.size)")
             let texture = SKTexture(image: skinTexture)
             let spriteNode = SKSpriteNode(texture: texture)
@@ -195,7 +185,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             spriteNode.zPosition = 10
             ball = spriteNode
         } else {
-            // Use default white ball
             print("⚽ [GameScene] Using default white ball (no skin image provided)")
             let shapeNode = SKShapeNode(circleOfRadius: ballRadius)
             shapeNode.position = level.playerStartPosition.cgPoint
@@ -223,7 +212,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupTerrain() {
-        // Each terrain node's path and physics body use the same local coordinates.
         for polygon in level.terrain {
             guard let path = polygon.makePath() else { continue }
             let node = SKShapeNode(path: path)
@@ -290,7 +278,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if impulse.magnitude > 1 {
             body.applyImpulse(impulse)
             strokes += 1
-            // Play ball stroke sound
             AudioManager.shared.playSound(.ballStroke)
         }
 
@@ -338,16 +325,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             contact.bodyB.categoryBitMask
         ]
         
-        // Ball entered hole
         if categories.contains(PhysicsCategory.ball) && categories.contains(PhysicsCategory.hole) {
             handleBallEnteredHole()
             return
         }
         
-        // Ball hit wall (terrain or bounds)
         if categories.contains(PhysicsCategory.ball) {
             if categories.contains(PhysicsCategory.terrain) || categories.contains(PhysicsCategory.bounds) {
-                // Only play sound if ball is moving fast enough
                 if let ballBody = ballNode?.physicsBody, ballBody.velocity.magnitude > 20 {
                     AudioManager.shared.playSound(.wallHit)
                 }
@@ -359,7 +343,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         guard !levelCompleted, let ball = ballNode else { return }
         levelCompleted = true
         
-        // Play level complete sound
         AudioManager.shared.playSound(.levelComplete)
         
         ball.physicsBody?.velocity = .zero
@@ -375,14 +358,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     private func calculateStars() -> Int {
-        // Star calculation logic with 3 thresholds:
-        // - 3 stars: strokes <= maxStrikesForThreeStars
-        // - 2 stars: strokes <= maxStrikesForTwoStars
-        // - 1 star: strokes <= maxStrikesForOneStar
-        // - 0 stars: strokes > maxStrikesForOneStar
-        // Expectation: maxStrikesForThreeStars < maxStrikesForTwoStars < maxStrikesForOneStar
-        
-        // Safety check: ensure we have at least 1 stroke (should always be true when ball enters hole)
         guard strokes > 0 else {
             print("WARNING: Level completed with 0 strokes! This shouldn't happen.")
             return 0
@@ -396,7 +371,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             return 2
         }
         
-        // Check for 1 star
         if strokes <= level.maxStrikesForOneStar {
             return 1
         }

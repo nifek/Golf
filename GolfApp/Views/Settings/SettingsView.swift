@@ -57,7 +57,6 @@ struct SettingsView: View {
     }
     
     private func handleLogout() {
-        // Dismiss all views first, then logout
         dismiss()
         appState.logout()
     }
