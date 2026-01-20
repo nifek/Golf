@@ -18,15 +18,35 @@ enum LevelLibraryError: LocalizedError {
 }
 
 struct LevelLibrary {
-    private let levelDirectory = "../Levels"
+    // Possible subdirectory paths where level JSONs might be located in the bundle
+    private let possibleDirectories = ["Levels", "Views/Levels/Levels", nil]
     private let levelFileExtension = "json"
     private let decoder = JSONDecoder()
 
     func availableLevels() -> [Level] {
-        guard let urls = Bundle.main.urls(
-            forResourcesWithExtension: levelFileExtension,
-            subdirectory: levelDirectory
-        ) else {
+        // Try each possible directory to find level files
+        var urls: [URL] = []
+        
+        for directory in possibleDirectories {
+            if let foundUrls = Bundle.main.urls(
+                forResourcesWithExtension: levelFileExtension,
+                subdirectory: directory
+            ) {
+                // Filter only level_X.json files
+                let levelUrls = foundUrls.filter { url in
+                    let name = url.deletingPathExtension().lastPathComponent
+                    return name.hasPrefix("level_")
+                }
+                if !levelUrls.isEmpty {
+                    urls = levelUrls
+                    print("📂 [LevelLibrary] Found \(levelUrls.count) level files in subdirectory: \(directory ?? "root")")
+                    break
+                }
+            }
+        }
+        
+        if urls.isEmpty {
+            print("⚠️ [LevelLibrary] No level files found in bundle")
             return []
         }
 
@@ -35,9 +55,11 @@ struct LevelLibrary {
                 // Extract level number from filename (e.g., "level_1.json" -> 1)
                 let resourceName = url.deletingPathExtension().lastPathComponent
                 guard let levelNumber = extractLevelNumber(from: resourceName) else {
+                    print("⚠️ [LevelLibrary] Could not extract level number from: \(resourceName)")
                     return nil
                 }
                 guard let definition = try? decodeLevel(at: url) else {
+                    print("⚠️ [LevelLibrary] Could not decode level: \(resourceName)")
                     return nil
                 }
                 return (levelNumber, url, definition)
@@ -76,15 +98,39 @@ struct LevelLibrary {
     }
 
     func loadDefinition(named resourceName: String) throws -> LevelDefinition {
-        guard let url = Bundle.main.url(
+        // Try to find the file in possible directories
+        for directory in possibleDirectories {
+            if let url = Bundle.main.url(
+                forResource: resourceName,
+                withExtension: levelFileExtension,
+                subdirectory: directory
+            ) {
+                return try decodeLevel(at: url)
+            }
+        }
+        
+        // Also try without subdirectory
+        if let url = Bundle.main.url(
             forResource: resourceName,
             withExtension: levelFileExtension
-        ) else {
-            throw LevelLibraryError.missingResource(
-                "Could not locate \(resourceName).\(levelFileExtension) in \(levelDirectory)/."
-            )
+        ) {
+            return try decodeLevel(at: url)
         }
-        return try decodeLevel(at: url)
+        
+        throw LevelLibraryError.missingResource(
+            "Could not locate \(resourceName).\(levelFileExtension) in bundle."
+        )
+    }
+    
+    /// Load a level definition from raw JSON data (used for daily challenges)
+    func loadDefinition(from data: Data) throws -> LevelDefinition {
+        do {
+            return try decoder.decode(LevelDefinition.self, from: data)
+        } catch let error as DecodingError {
+            throw LevelLibraryError.failedToDecode(URL(string: "data://")!, underlying: error)
+        } catch {
+            throw LevelLibraryError.failedToRead(URL(string: "data://")!, underlying: error)
+        }
     }
 
     private func decodeLevel(at url: URL) throws -> LevelDefinition {

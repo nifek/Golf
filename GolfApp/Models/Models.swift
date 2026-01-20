@@ -103,14 +103,28 @@ struct LeaderboardEntry: Identifiable, Hashable {
 
 extension Level {
     /// Levels start with 0 stars and locked (except level 1) - progress is loaded from API
-    static func samples() -> [Level] {
-        [
-            Level(id: 1, name: "Level 1", difficulty: "Easy", stars: 0, isLocked: false, resourceName: "level_1"),
-            Level(id: 2, name: "Level 2", difficulty: "Medium", stars: 0, isLocked: true, resourceName: "level_2"),
-            Level(id: 3, name: "Level 3", difficulty: "Hard", stars: 0, isLocked: true, resourceName: "level_3"),
-            Level(id: 4, name: "Level 4", difficulty: "Expert", stars: 0, isLocked: true, resourceName: "level_4"),
-            Level(id: 5, name: "Level 5", difficulty: "Master", stars: 0, isLocked: true, resourceName: "level_5")
-        ]
+    /// This generates levels dynamically based on the count parameter
+    static func samples(count: Int = 9) -> [Level] {
+        (1...count).map { levelNumber in
+            Level(
+                id: levelNumber,
+                name: "Level \(levelNumber)",
+                difficulty: difficultyForLevel(levelNumber),
+                stars: 0,
+                isLocked: levelNumber > 1,
+                resourceName: "level_\(levelNumber)"
+            )
+        }
+    }
+    
+    private static func difficultyForLevel(_ level: Int) -> String {
+        switch level {
+        case 1...2: return "Easy"
+        case 3...4: return "Medium"
+        case 5...6: return "Hard"
+        case 7...8: return "Expert"
+        default: return "Master"
+        }
     }
 }
 
