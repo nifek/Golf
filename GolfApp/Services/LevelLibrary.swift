@@ -70,7 +70,7 @@ struct LevelLibrary {
                 return Level(
                     id: levelNumber,
                     name: definition.levelName,
-                    difficulty: "Par —",
+                    difficulty: "Par \(definition.maxStrikesForThreeStars)",
                     stars: 0,
                     isLocked: levelNumber > 1, // Only level 1 is unlocked by default
                     resourceName: resourceName

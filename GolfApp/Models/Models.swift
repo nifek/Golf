@@ -109,7 +109,7 @@ extension Level {
             Level(
                 id: levelNumber,
                 name: "Level \(levelNumber)",
-                difficulty: difficultyForLevel(levelNumber),
+                difficulty: "Par \(parForLevel(levelNumber))",
                 stars: 0,
                 isLocked: levelNumber > 1,
                 resourceName: "level_\(levelNumber)"
@@ -117,13 +117,18 @@ extension Level {
         }
     }
     
-    private static func difficultyForLevel(_ level: Int) -> String {
+    /// Estimated par for each level (used for fallback samples)
+    private static func parForLevel(_ level: Int) -> Int {
         switch level {
-        case 1...2: return "Easy"
-        case 3...4: return "Medium"
-        case 5...6: return "Hard"
-        case 7...8: return "Expert"
-        default: return "Master"
+        case 1: return 2
+        case 2: return 2
+        case 3: return 3
+        case 4: return 3
+        case 5: return 4
+        case 6: return 4
+        case 7: return 5
+        case 8: return 5
+        default: return 6
         }
     }
 }
