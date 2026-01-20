@@ -34,7 +34,8 @@ struct LevelPlayView: View {
     @State private var levelStartTime: Date?
     @State private var completionResult: LevelProgressResponse?
     @State private var isSubmitting = false
-    @State private var showMenuConfirmation = false
+    @State private var showMenuSheet = false
+    @State private var currentStrokes: Int = 0
 
     var body: some View {
         Group {
@@ -43,13 +44,13 @@ struct LevelPlayView: View {
                     SpriteView(scene: scene)
                         .ignoresSafeArea(edges: .all)
                     
-                    // HUD overlay (menu button + level indicator)
+                    // HUD overlay (menu button + level indicator + strokes)
                     if completedStars == nil {
                         VStack {
                             HStack(alignment: .center, spacing: 12) {
                                 // Menu button
                                 Button {
-                                    showMenuConfirmation = true
+                                    showMenuSheet = true
                                 } label: {
                                     Image(systemName: "line.3.horizontal")
                                         .font(.system(size: 18, weight: .semibold))
@@ -63,7 +64,7 @@ struct LevelPlayView: View {
                                 
                                 // Level indicator
                                 Text("Level \(level.id)")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -73,8 +74,23 @@ struct LevelPlayView: View {
                                     )
                                 
                                 Spacer()
+                                
+                                // Strokes indicator (same style as level)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "figure.golf")
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text("\(currentStrokes)")
+                                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.black.opacity(0.5))
+                                )
                             }
-                            .padding(.leading, 16)
+                            .padding(.horizontal, 16)
                             .padding(.top, 54)
                             
                             Spacer()
@@ -127,13 +143,30 @@ struct LevelPlayView: View {
         .task {
             await loadSceneIfNeeded()
         }
-        .confirmationDialog("Menu", isPresented: $showMenuConfirmation, titleVisibility: .visible) {
-            Button("Exit Level", role: .destructive) {
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Are you sure you want to exit? Your progress on this attempt will be lost.")
+        .sheet(isPresented: $showMenuSheet) {
+            GameMenuSheet(
+                levelId: level.id,
+                onRetry: {
+                    showMenuSheet = false
+                    retryLevel()
+                },
+                onExit: {
+                    showMenuSheet = false
+                    dismiss()
+                }
+            )
+            .presentationDetents([.height(280)])
+            .presentationDragIndicator(.visible)
+        }
+    }
+    
+    private func retryLevel() {
+        scene = nil
+        currentStrokes = 0
+        completedStars = nil
+        completionResult = nil
+        Task {
+            await loadSceneIfNeeded(force: true)
         }
     }
 
@@ -176,16 +209,22 @@ struct LevelPlayView: View {
             print("🎮 [LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
             
             // Create scene with equipped skin image (no levelNumber to avoid duplicate label)
-            scene = GameScene(
+            let newScene = GameScene(
                 level: definition,
                 levelNumber: nil,
                 skinImage: appState.equippedSkinImage
             )
-            scene?.onLevelComplete = { stars in
+            newScene.onLevelComplete = { stars in
                 Task { @MainActor in
                     await handleLevelComplete(stars: stars)
                 }
             }
+            newScene.onStrokesChanged = { strokes in
+                Task { @MainActor in
+                    currentStrokes = strokes
+                }
+            }
+            scene = newScene
         } catch {
             loadError = error.localizedDescription
         }
@@ -220,6 +259,72 @@ struct LevelPlayView: View {
     }
 }
 
+// MARK: - Game Menu Sheet
+private struct GameMenuSheet: View {
+    let levelId: Int
+    let onRetry: () -> Void
+    let onExit: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Title
+            Text("Level \(levelId)")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+                .padding(.top, 8)
+            
+            Text("Paused")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Divider()
+                .padding(.horizontal)
+            
+            // Buttons
+            VStack(spacing: 12) {
+                Button {
+                    onRetry()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.counterclockwise")
+                        Text("Retry")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Theme.accent)
+                    )
+                }
+                
+                Button {
+                    onExit()
+                } label: {
+                    HStack {
+                        Image(systemName: "xmark.circle")
+                        Text("Exit Level")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.red, lineWidth: 2)
+                    )
+                }
+            }
+            .padding(.horizontal, 24)
+            
+            Spacer()
+        }
+        .padding(.top, 16)
+    }
+}
+
+// MARK: - Level Complete Overlay
 private struct LevelCompleteOverlay: View {
     let stars: Int
     let score: Int?

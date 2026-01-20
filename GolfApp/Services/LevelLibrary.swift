@@ -31,24 +31,41 @@ struct LevelLibrary {
         }
 
         return urls
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .enumerated()
-            .compactMap { idx, url in
+            .compactMap { url -> (Int, URL, LevelDefinition)? in
+                // Extract level number from filename (e.g., "level_1.json" -> 1)
+                let resourceName = url.deletingPathExtension().lastPathComponent
+                guard let levelNumber = extractLevelNumber(from: resourceName) else {
+                    return nil
+                }
                 guard let definition = try? decodeLevel(at: url) else {
                     return nil
                 }
-                let resourceName = url
-                    .deletingPathExtension()
-                    .lastPathComponent
+                return (levelNumber, url, definition)
+            }
+            .sorted { $0.0 < $1.0 } // Sort by level number
+            .map { levelNumber, url, definition in
+                let resourceName = url.deletingPathExtension().lastPathComponent
                 return Level(
-                    id: idx + 1,
+                    id: levelNumber,
                     name: definition.levelName,
                     difficulty: "Par —",
                     stars: 0,
-                    isLocked: false,
+                    isLocked: levelNumber > 1, // Only level 1 is unlocked by default
                     resourceName: resourceName
                 )
             }
+    }
+    
+    /// Extract level number from filename (e.g., "level_1" -> 1, "level_123" -> 123)
+    private func extractLevelNumber(from filename: String) -> Int? {
+        // Match pattern "level_X" where X is a number
+        let pattern = "level_(\\d+)"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []),
+              let match = regex.firstMatch(in: filename, options: [], range: NSRange(filename.startIndex..., in: filename)),
+              let numberRange = Range(match.range(at: 1), in: filename) else {
+            return nil
+        }
+        return Int(filename[numberRange])
     }
 
     func loadDefinition(for level: Level) throws -> LevelDefinition {

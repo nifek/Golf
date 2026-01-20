@@ -28,16 +28,16 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     
     private var strokes = 0 {
         didSet {
-            strokeLabel?.text = "Strikes: \(strokes)"
+            onStrokesChanged?(strokes)
         }
     }
     
     /// Public accessor for current strokes count
     var currentStrokes: Int { strokes }
-    private var strokeLabel: SKLabelNode?
     private var levelLabel: SKLabelNode?
     
     var onLevelComplete: ((Int) -> Void)?
+    var onStrokesChanged: ((Int) -> Void)?
 
     /// Initialize with level definition, level number, and optional skin image
     /// - Parameters:
@@ -102,6 +102,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
+        // HUD is now handled by SwiftUI overlay
+        // Only setup level label if needed (currently not used)
         if let levelText = levelNumberText {
             let levelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
             levelNode.text = levelText
@@ -112,21 +114,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             levelNode.zPosition = 100
             addChild(levelNode)
             levelLabel = levelNode
+            updateHUDLayout()
         } else {
             levelLabel = nil
         }
         
-        let strokeNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        strokeNode.text = "Strikes: \(strokes)"
-        strokeNode.fontSize = 28
-        strokeNode.fontColor = .white
-        strokeNode.horizontalAlignmentMode = .right
-        strokeNode.verticalAlignmentMode = .top
-        strokeNode.zPosition = 100
-        addChild(strokeNode)
-        strokeLabel = strokeNode
-        
-        updateHUDLayout()
+        // Trigger initial strokes callback
+        onStrokesChanged?(strokes)
     }
 
     private func updateHUDLayout() {
@@ -135,10 +129,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let topY = size.height / 2 - topPadding
         levelLabel?.position = CGPoint(
             x: -size.width / 2 + horizontalPadding,
-            y: topY
-        )
-        strokeLabel?.position = CGPoint(
-            x: size.width / 2 - horizontalPadding,
             y: topY
         )
     }

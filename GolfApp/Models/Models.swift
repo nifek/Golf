@@ -102,14 +102,14 @@ struct LeaderboardEntry: Identifiable, Hashable {
 // MARK: - Sample Data
 
 extension Level {
-    /// Levels start with 0 stars - progress is loaded from API
+    /// Levels start with 0 stars and locked (except level 1) - progress is loaded from API
     static func samples() -> [Level] {
         [
             Level(id: 1, name: "Level 1", difficulty: "Easy", stars: 0, isLocked: false, resourceName: "level_1"),
-            Level(id: 2, name: "Level 2", difficulty: "Medium", stars: 0, isLocked: false, resourceName: "level_2"),
-            Level(id: 3, name: "Level 3", difficulty: "Hard", stars: 0, isLocked: false, resourceName: "level_3"),
-            Level(id: 4, name: "Level 4", difficulty: "Expert", stars: 0, isLocked: false, resourceName: "level_4"),
-            Level(id: 5, name: "Level 5", difficulty: "?", stars: 0, isLocked: true, resourceName: "level_5")
+            Level(id: 2, name: "Level 2", difficulty: "Medium", stars: 0, isLocked: true, resourceName: "level_2"),
+            Level(id: 3, name: "Level 3", difficulty: "Hard", stars: 0, isLocked: true, resourceName: "level_3"),
+            Level(id: 4, name: "Level 4", difficulty: "Expert", stars: 0, isLocked: true, resourceName: "level_4"),
+            Level(id: 5, name: "Level 5", difficulty: "Master", stars: 0, isLocked: true, resourceName: "level_5")
         ]
     }
 }

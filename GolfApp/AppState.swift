@@ -94,6 +94,8 @@ final class AppState: ObservableObject {
     func reloadLevels() {
         let loadedLevels = levelLibrary.availableLevels()
         levels = loadedLevels.isEmpty ? Level.samples() : loadedLevels
+        // Apply initial lock states (level 1 unlocked, rest locked until progress loaded)
+        updateLevelLockStates()
     }
 
     func levelDefinition(for level: Level) throws -> LevelDefinition {
@@ -104,6 +106,41 @@ final class AppState: ObservableObject {
         guard let index = levels.firstIndex(where: { $0.id == levelID }) else { return }
         if stars > levels[index].stars {
             levels[index].stars = stars
+        }
+        // Unlock the next level if this one was completed
+        if stars > 0 {
+            unlockNextLevel(after: levelID)
+        }
+    }
+    
+    /// Unlock the next level after completing a level
+    private func unlockNextLevel(after levelID: Int) {
+        let nextLevelID = levelID + 1
+        if let nextIndex = levels.firstIndex(where: { $0.id == nextLevelID }) {
+            levels[nextIndex].isLocked = false
+        }
+    }
+    
+    /// Update locked state for all levels based on progress
+    private func updateLevelLockStates() {
+        // Sort levels by ID to ensure proper order
+        let sortedLevels = levels.sorted { $0.id < $1.id }
+        
+        for (index, level) in sortedLevels.enumerated() {
+            if level.id == 1 {
+                // Level 1 is always unlocked
+                if let idx = levels.firstIndex(where: { $0.id == level.id }) {
+                    levels[idx].isLocked = false
+                }
+            } else {
+                // Level N is unlocked if level N-1 has stars > 0
+                let previousLevelID = level.id - 1
+                let previousLevelPassed = sortedLevels.first(where: { $0.id == previousLevelID })?.stars ?? 0 > 0
+                
+                if let idx = levels.firstIndex(where: { $0.id == level.id }) {
+                    levels[idx].isLocked = !previousLevelPassed
+                }
+            }
         }
     }
     
@@ -123,9 +160,14 @@ final class AppState: ObservableObject {
                     levels[index].bestScore = levelProgress.score
                 }
             }
+            
+            // Update lock states based on progress
+            updateLevelLockStates()
         } catch {
             // Silently fail - levels will show 0 stars
             print("Failed to load level progress: \(error)")
+            // Still update lock states based on local data
+            updateLevelLockStates()
         }
     }
     
