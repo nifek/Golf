@@ -23,11 +23,11 @@ actor DailyChallengeService {
     
     func loadLevel(from storagePath: String) async throws -> LevelDefinition {
         if let cached = levelCache[storagePath] {
-            print("💾 [DailyChallengeService] Level cache HIT for '\(storagePath)'")
+            print("[DailyChallengeService] Level cache HIT for '\(storagePath)'")
             return cached
         }
         
-        print("📥 [DailyChallengeService] Loading level from Firebase Storage: '\(storagePath)'")
+        print("[DailyChallengeService] Loading level from Firebase Storage: '\(storagePath)'")
         
         let storage = Storage.storage()
         let reference = storage.reference(withPath: storagePath)
@@ -35,33 +35,33 @@ actor DailyChallengeService {
         let url: URL
         do {
             url = try await reference.downloadURL()
-            print("✅ [DailyChallengeService] Got download URL: \(url.absoluteString)")
+            print("[DailyChallengeService] Got download URL: \(url.absoluteString)")
         } catch {
-            print("❌ [DailyChallengeService] Failed to get download URL: \(error)")
+            print("[DailyChallengeService] Failed to get download URL: \(error)")
             throw DailyChallengeError.levelNotFound
         }
         
         let (data, response) = try await URLSession.shared.data(from: url)
         
         if let httpResponse = response as? HTTPURLResponse {
-            print("📥 [DailyChallengeService] HTTP Status: \(httpResponse.statusCode)")
+            print("[DailyChallengeService] HTTP Status: \(httpResponse.statusCode)")
             if httpResponse.statusCode != 200 {
                 throw DailyChallengeError.downloadFailed
             }
         }
         
-        print("📥 [DailyChallengeService] Downloaded \(data.count) bytes")
+        print("[DailyChallengeService] Downloaded \(data.count) bytes")
         
         do {
             let decoder = JSONDecoder()
             let level = try decoder.decode(LevelDefinition.self, from: data)
-            print("✅ [DailyChallengeService] Parsed level successfully")
+            print("[DailyChallengeService] Parsed level successfully")
             
             levelCache[storagePath] = level
             
             return level
         } catch {
-            print("❌ [DailyChallengeService] Failed to parse level JSON: \(error)")
+            print("[DailyChallengeService] Failed to parse level JSON: \(error)")
             throw DailyChallengeError.invalidLevelData
         }
     }

@@ -170,26 +170,26 @@ final class AppState: ObservableObject {
     }
 
     func loadShop() async {
-        print("🛍️ [AppState] loadShop() started")
+        print("[AppState] loadShop() started")
         isLoadingShop = true
         defer { isLoadingShop = false }
         
         do {
-            print("🛍️ [AppState] Fetching skins from API...")
+            print("[AppState] Fetching skins from API...")
             let skins = try await apiClient.getAllSkins()
-            print("🛍️ [AppState] Got \(skins.count) skins from API")
+            print("[AppState] Got \(skins.count) skins from API")
             
             for skin in skins {
-                print("🛍️ [AppState] Skin: id='\(skin.id)', imageUrl='\(skin.imageUrl)', owned=\(skin.owned), equipped=\(skin.equipped)")
+                print("[AppState] Skin: id='\(skin.id)', imageUrl='\(skin.imageUrl)', owned=\(skin.owned), equipped=\(skin.equipped)")
             }
             
             shopItems = skins.map { ShopItem(from: $0) }
-            print("🛍️ [AppState] Mapped to \(shopItems.count) shop items")
+            print("[AppState] Mapped to \(shopItems.count) shop items")
         } catch {
-            print("❌ [AppState] loadShop error: \(error)")
+            print("[AppState] loadShop error: \(error)")
             lastError = error.localizedDescription
             if shopItems.isEmpty {
-                print("🛍️ [AppState] Using sample shop items as fallback")
+                print("[AppState] Using sample shop items as fallback")
                 shopItems = ShopItem.samples()
             }
         }
@@ -232,31 +232,31 @@ final class AppState: ObservableObject {
     }
     
     func loadEquippedSkinImage() async {
-        print("🎨 [AppState] loadEquippedSkinImage() started")
-        print("🎨 [AppState] equippedSkinId from user: '\(equippedSkinId)'")
-        print("🎨 [AppState] shopItems count: \(shopItems.count)")
+        print("[AppState] loadEquippedSkinImage() started")
+        print("[AppState] equippedSkinId from user: '\(equippedSkinId)'")
+        print("[AppState] shopItems count: \(shopItems.count)")
         
         let equippedItem = shopItems.first { $0.equipped } ?? shopItems.first { $0.id == equippedSkinId }
         
         guard let item = equippedItem else {
-            print("⚠️ [AppState] No equipped item found in shopItems!")
+            print("[AppState] No equipped item found in shopItems!")
             equippedSkinImage = nil
             return
         }
         
-        print("🎨 [AppState] Found equipped item: id='\(item.id)', imageUrl='\(item.imageUrl)'")
+        print("[AppState] Found equipped item: id='\(item.id)', imageUrl='\(item.imageUrl)'")
         
         guard !item.imageUrl.isEmpty else {
-            print("⚠️ [AppState] imageUrl is empty for equipped item")
+            print("[AppState] imageUrl is empty for equipped item")
             equippedSkinImage = nil
             return
         }
         
         if let cachedImage = await SkinImageCache.shared.getImage(for: item.imageUrl) {
-            print("✅ [AppState] Got equipped skin image from cache")
+            print("[AppState] Got equipped skin image from cache")
             equippedSkinImage = cachedImage
         } else {
-            print("❌ [AppState] Failed to get equipped skin image")
+            print("[AppState] Failed to get equipped skin image")
             equippedSkinImage = nil
         }
     }
@@ -265,7 +265,7 @@ final class AppState: ObservableObject {
         let paths = shopItems.compactMap { $0.imageUrl.isEmpty ? nil : $0.imageUrl }
         guard !paths.isEmpty else { return }
         
-        print("📦 [AppState] Preloading \(paths.count) skin images...")
+        print("[AppState] Preloading \(paths.count) skin images...")
         await SkinImageCache.shared.preloadImages(for: paths)
     }
     

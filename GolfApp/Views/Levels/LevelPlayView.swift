@@ -184,7 +184,7 @@ struct LevelPlayView: View {
         loadError = nil
         
         if appState.equippedSkinImage == nil && !appState.shopItems.isEmpty {
-            print("🎮 [LevelPlayView] Skin not loaded, attempting to load...")
+            print("[LevelPlayView] Skin not loaded, attempting to load...")
             await appState.loadEquippedSkinImage()
         }
 
@@ -202,9 +202,9 @@ struct LevelPlayView: View {
             
             levelStartTime = Date()
             
-            print("🎮 [LevelPlayView] Creating GameScene for level \(level.id)")
-            print("🎮 [LevelPlayView] equippedSkinImage: \(appState.equippedSkinImage != nil ? "loaded (\(appState.equippedSkinImage!.size))" : "nil")")
-            print("🎮 [LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
+            print("[LevelPlayView] Creating GameScene for level \(level.id)")
+            print("[LevelPlayView] equippedSkinImage: \(appState.equippedSkinImage != nil ? "loaded (\(appState.equippedSkinImage!.size))" : "nil")")
+            print("[LevelPlayView] equippedSkinId: '\(appState.equippedSkinId)'")
             
             let newScene = GameScene(
                 level: definition,

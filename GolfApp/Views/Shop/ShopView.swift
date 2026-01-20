@@ -59,9 +59,9 @@ struct ShopView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
         .task {
-            print("🛒 [ShopView] Loading shop...")
+            print("[ShopView] Loading shop...")
             await appState.loadShop()
-            print("🛒 [ShopView] Shop loaded. Items count: \(appState.shopItems.count)")
+            print("[ShopView] Shop loaded. Items count: \(appState.shopItems.count)")
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") {

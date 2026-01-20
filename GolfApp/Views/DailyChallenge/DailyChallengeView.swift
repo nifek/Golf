@@ -488,7 +488,7 @@ struct DailyChallengePlayView: View {
         loadError = nil
         
         do {
-            print("🎯 [DailyChallengePlay] Loading level from: '\(challenge.fileUrl)'")
+            print("[DailyChallengePlay] Loading level from: '\(challenge.fileUrl)'")
             let definition = try await DailyChallengeService.shared.loadLevel(from: challenge.fileUrl)
             
             levelStartTime = Date()
@@ -513,7 +513,7 @@ struct DailyChallengePlayView: View {
             scene = gameScene
             levelDefinition = definition
         } catch {
-            print("❌ [DailyChallengePlay] Error loading level: \(error)")
+            print("[DailyChallengePlay] Error loading level: \(error)")
             loadError = error.localizedDescription
         }
         
@@ -550,9 +550,9 @@ struct DailyChallengePlayView: View {
                 strokes: strokes,
                 stars: stars
             )
-            print("✅ [DailyChallengePlay] Attempt submitted, score: \(attemptResult?.score ?? 0)")
+            print("[DailyChallengePlay] Attempt submitted, score: \(attemptResult?.score ?? 0)")
         } catch {
-            print("❌ [DailyChallengePlay] Failed to submit attempt: \(error)")
+            print("[DailyChallengePlay] Failed to submit attempt: \(error)")
         }
         
         isSubmitting = false

@@ -42,7 +42,7 @@ final class AudioManager: ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            print("❌ [AudioManager] Failed to setup audio session: \(error)")
+            print("[AudioManager] Failed to setup audio session: \(error)")
         }
     }
     
@@ -53,12 +53,12 @@ final class AudioManager: ObservableObject {
                     let player = try AVAudioPlayer(contentsOf: url)
                     player.prepareToPlay()
                     soundEffectPlayers[effect.rawValue] = player
-                    print("✅ [AudioManager] Preloaded sound effect: \(effect.rawValue)")
+                    print("[AudioManager] Preloaded sound effect: \(effect.rawValue)")
                 } catch {
-                    print("⚠️ [AudioManager] Could not preload \(effect.rawValue): \(error)")
+                    print("[AudioManager] Could not preload \(effect.rawValue): \(error)")
                 }
             } else {
-                print("⚠️ [AudioManager] Sound file not found: \(effect.rawValue).wav")
+                print("[AudioManager] Sound file not found: \(effect.rawValue).wav")
             }
         }
     }
@@ -71,7 +71,7 @@ final class AudioManager: ObservableObject {
         stopMusic()
         
         guard let url = Bundle.main.url(forResource: type.rawValue, withExtension: "wav") else {
-            print("⚠️ [AudioManager] Music file not found: \(type.rawValue).wav")
+            print("[AudioManager] Music file not found: \(type.rawValue).wav")
             return
         }
         
@@ -83,10 +83,10 @@ final class AudioManager: ObservableObject {
             
             if isMusicEnabled {
                 musicPlayer?.play()
-                print("🎵 [AudioManager] Playing music: \(type.rawValue)")
+                print("[AudioManager] Playing music: \(type.rawValue)")
             }
         } catch {
-            print("❌ [AudioManager] Failed to play music: \(error)")
+            print("[AudioManager] Failed to play music: \(error)")
         }
     }
     
@@ -139,7 +139,7 @@ final class AudioManager: ObservableObject {
         }
         
         guard let url = Bundle.main.url(forResource: effect.rawValue, withExtension: "wav") else {
-            print("⚠️ [AudioManager] Sound file not found: \(effect.rawValue).wav")
+            print("[AudioManager] Sound file not found: \(effect.rawValue).wav")
             return
         }
         
@@ -148,7 +148,7 @@ final class AudioManager: ObservableObject {
             player.play()
             soundEffectPlayers[effect.rawValue] = player
         } catch {
-            print("❌ [AudioManager] Failed to play sound: \(error)")
+            print("[AudioManager] Failed to play sound: \(error)")
         }
     }
     

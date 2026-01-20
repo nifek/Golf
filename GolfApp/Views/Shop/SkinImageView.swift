@@ -35,13 +35,13 @@ struct SkinImageView: View {
     
     private func loadImage() async {
         guard !storagePath.isEmpty else {
-            print("⚠️ [SkinImageView '\(skinId)'] Storage path is empty")
+            print("[SkinImageView '\(skinId)'] Storage path is empty")
             isLoading = false
             loadFailed = true
             return
         }
         
-        print("🖼️ [SkinImageView '\(skinId)'] Loading from path: '\(storagePath)'")
+        print("[SkinImageView '\(skinId)'] Loading from path: '\(storagePath)'")
         
         if let cachedImage = await SkinImageCache.shared.getImage(for: storagePath) {
             await MainActor.run {

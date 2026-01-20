@@ -36,14 +36,14 @@ struct LevelLibrary {
                 }
                 if !levelUrls.isEmpty {
                     urls = levelUrls
-                    print("📂 [LevelLibrary] Found \(levelUrls.count) level files in subdirectory: \(directory ?? "root")")
+                    print("[LevelLibrary] Found \(levelUrls.count) level files in subdirectory: \(directory ?? "root")")
                     break
                 }
             }
         }
         
         if urls.isEmpty {
-            print("⚠️ [LevelLibrary] No level files found in bundle")
+            print("[LevelLibrary] No level files found in bundle")
             return []
         }
 
@@ -51,11 +51,11 @@ struct LevelLibrary {
             .compactMap { url -> (Int, URL, LevelDefinition)? in
                 let resourceName = url.deletingPathExtension().lastPathComponent
                 guard let levelNumber = extractLevelNumber(from: resourceName) else {
-                    print("⚠️ [LevelLibrary] Could not extract level number from: \(resourceName)")
+                    print("[LevelLibrary] Could not extract level number from: \(resourceName)")
                     return nil
                 }
                 guard let definition = try? decodeLevel(at: url) else {
-                    print("⚠️ [LevelLibrary] Could not decode level: \(resourceName)")
+                    print("[LevelLibrary] Could not decode level: \(resourceName)")
                     return nil
                 }
                 return (levelNumber, url, definition)

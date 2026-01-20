@@ -21,30 +21,30 @@ actor SkinImageCache {
         let cacheKey = cacheKey(for: storagePath)
         
         if let cached = memoryCache[cacheKey] {
-            print("💾 [SkinCache] Memory cache HIT for '\(storagePath)'")
+            print("[SkinCache] Memory cache HIT for '\(storagePath)'")
             return cached
         }
         
         if let diskCached = loadFromDisk(cacheKey: cacheKey) {
-            print("💾 [SkinCache] Disk cache HIT for '\(storagePath)'")
+            print("[SkinCache] Disk cache HIT for '\(storagePath)'")
             memoryCache[cacheKey] = diskCached
             return diskCached
         }
         
-        print("📥 [SkinCache] Cache MISS for '\(storagePath)', downloading...")
+        print("[SkinCache] Cache MISS for '\(storagePath)', downloading...")
         if let downloaded = await downloadImage(storagePath: storagePath) {
             memoryCache[cacheKey] = downloaded
             saveToDisk(image: downloaded, cacheKey: cacheKey)
-            print("✅ [SkinCache] Downloaded and cached '\(storagePath)'")
+            print("[SkinCache] Downloaded and cached '\(storagePath)'")
             return downloaded
         }
         
-        print("❌ [SkinCache] Failed to download '\(storagePath)'")
+        print("[SkinCache] Failed to download '\(storagePath)'")
         return nil
     }
     
     func preloadImages(for storagePaths: [String]) async {
-        print("📦 [SkinCache] Preloading \(storagePaths.count) images...")
+        print("[SkinCache] Preloading \(storagePaths.count) images...")
         
         await withTaskGroup(of: Void.self) { group in
             for path in storagePaths {
@@ -54,16 +54,16 @@ actor SkinImageCache {
             }
         }
         
-        print("📦 [SkinCache] Preloading complete")
+        print("[SkinCache] Preloading complete")
     }
     
     func clearMemoryCache() {
-        print("🗑️ [SkinCache] Clearing memory cache")
+        print("[SkinCache] Clearing memory cache")
         memoryCache.removeAll()
     }
     
     func clearAllCaches() {
-        print("🗑️ [SkinCache] Clearing all caches")
+        print("[SkinCache] Clearing all caches")
         memoryCache.removeAll()
         
         if let cacheDir = cacheDirectory {
@@ -109,13 +109,13 @@ actor SkinImageCache {
             let (data, response) = try await URLSession.shared.data(from: url)
             
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                print("❌ [SkinCache] HTTP error \(httpResponse.statusCode) for '\(storagePath)'")
+                print("[SkinCache] HTTP error \(httpResponse.statusCode) for '\(storagePath)'")
                 return nil
             }
             
             return UIImage(data: data)
         } catch {
-            print("❌ [SkinCache] Download error for '\(storagePath)': \(error)")
+            print("[SkinCache] Download error for '\(storagePath)': \(error)")
             return nil
         }
     }
