@@ -143,6 +143,14 @@ struct LevelPlayView: View {
         .task {
             await loadSceneIfNeeded()
         }
+        .onAppear {
+            // Switch to game music
+            AudioManager.shared.playMusic(.game)
+        }
+        .onDisappear {
+            // Switch back to menu music
+            AudioManager.shared.playMusic(.menu)
+        }
         .sheet(isPresented: $showMenuSheet) {
             GameMenuSheet(
                 levelId: level.id,

@@ -98,6 +98,14 @@ struct MainMenuView: View {
             // Load the equipped skin image for game use
             await appState.loadEquippedSkinImage()
         }
+        .onAppear {
+            // Play menu music and sync audio settings
+            AudioManager.shared.syncWithAppState(
+                musicEnabled: appState.musicEnabled,
+                soundEnabled: appState.soundEffectsEnabled
+            )
+            AudioManager.shared.playMusic(.menu)
+        }
     }
 }
 

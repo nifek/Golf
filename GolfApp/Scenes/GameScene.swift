@@ -288,6 +288,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if impulse.magnitude > 1 {
             body.applyImpulse(impulse)
             strokes += 1
+            // Play ball stroke sound
+            AudioManager.shared.playSound(.ballStroke)
         }
 
         self.dragStartPoint = nil
@@ -333,14 +335,30 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             contact.bodyA.categoryBitMask,
             contact.bodyB.categoryBitMask
         ]
+        
+        // Ball entered hole
         if categories.contains(PhysicsCategory.ball) && categories.contains(PhysicsCategory.hole) {
             handleBallEnteredHole()
+            return
+        }
+        
+        // Ball hit wall (terrain or bounds)
+        if categories.contains(PhysicsCategory.ball) {
+            if categories.contains(PhysicsCategory.terrain) || categories.contains(PhysicsCategory.bounds) {
+                // Only play sound if ball is moving fast enough
+                if let ballBody = ballNode?.physicsBody, ballBody.velocity.magnitude > 20 {
+                    AudioManager.shared.playSound(.wallHit)
+                }
+            }
         }
     }
 
     private func handleBallEnteredHole() {
         guard !levelCompleted, let ball = ballNode else { return }
         levelCompleted = true
+        
+        // Play level complete sound
+        AudioManager.shared.playSound(.levelComplete)
         
         ball.physicsBody?.velocity = .zero
         let shrink = SKAction.scale(to: 0.1, duration: 0.35)
