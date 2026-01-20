@@ -2,7 +2,7 @@ import Foundation
 import FirebaseAuth
 
 enum APIConfig {
-    static let baseURL = "http://localhost:8089"
+    static let baseURL = "http://10.57.220.87:8089"
     static let apiVersion = "/api/v1"
 }
 
