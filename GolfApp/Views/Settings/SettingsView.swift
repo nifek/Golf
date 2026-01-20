@@ -19,10 +19,27 @@ struct SettingsView: View {
             }
 
             Section(header: Text("Audio")) {
-                Toggle("Music", isOn: $appState.musicEnabled)
-                Toggle("Sound effects", isOn: $appState.soundEffectsEnabled)
+                HStack {
+                    Image(systemName: "music.note")
+                        .foregroundColor(Theme.accent)
+                        .frame(width: 24)
+                    Toggle("Music", isOn: $appState.musicEnabled)
+                        .onChange(of: appState.musicEnabled) { _, newValue in
+                            AudioManager.shared.isMusicEnabled = newValue
+                        }
+                }
+                
+                HStack {
+                    Image(systemName: "speaker.wave.2")
+                        .foregroundColor(Theme.accent)
+                        .frame(width: 24)
+                    Toggle("Sound Effects", isOn: $appState.soundEffectsEnabled)
+                        .onChange(of: appState.soundEffectsEnabled) { _, newValue in
+                            AudioManager.shared.isSoundEnabled = newValue
+                        }
+                }
             }
-            .tint(Theme.card)
+            .tint(Theme.accent)
             .listRowBackground(Theme.card.opacity(0.85))
 
             Section {

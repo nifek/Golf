@@ -163,7 +163,8 @@ struct LevelPlayView: View {
                     dismiss()
                 }
             )
-            .presentationDetents([.height(280)])
+            .environmentObject(appState)
+            .presentationDetents([.height(380)])
             .presentationDragIndicator(.visible)
         }
     }
@@ -269,12 +270,13 @@ struct LevelPlayView: View {
 
 // MARK: - Game Menu Sheet
 private struct GameMenuSheet: View {
+    @EnvironmentObject private var appState: AppState
     let levelId: Int
     let onRetry: () -> Void
     let onExit: () -> Void
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Title
             Text("Level \(levelId)")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -288,7 +290,52 @@ private struct GameMenuSheet: View {
             Divider()
                 .padding(.horizontal)
             
-            // Buttons
+            // Audio Controls
+            HStack(spacing: 16) {
+                // Music Toggle
+                Button {
+                    appState.musicEnabled.toggle()
+                    AudioManager.shared.isMusicEnabled = appState.musicEnabled
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: appState.musicEnabled ? "music.note" : "music.note.slash")
+                            .font(.title2)
+                        Text("Music")
+                            .font(.caption)
+                    }
+                    .foregroundColor(appState.musicEnabled ? Theme.accent : .gray)
+                    .frame(width: 70, height: 60)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+                
+                // Sound Toggle
+                Button {
+                    appState.soundEffectsEnabled.toggle()
+                    AudioManager.shared.isSoundEnabled = appState.soundEffectsEnabled
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: appState.soundEffectsEnabled ? "speaker.wave.2" : "speaker.slash")
+                            .font(.title2)
+                        Text("Sound")
+                            .font(.caption)
+                    }
+                    .foregroundColor(appState.soundEffectsEnabled ? Theme.accent : .gray)
+                    .frame(width: 70, height: 60)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+            }
+            .padding(.vertical, 4)
+            
+            Divider()
+                .padding(.horizontal)
+            
+            // Action Buttons
             VStack(spacing: 12) {
                 Button {
                     onRetry()

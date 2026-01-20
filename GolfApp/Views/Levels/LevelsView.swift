@@ -2,7 +2,6 @@ import SwiftUI
 
 struct LevelsView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var showAudioSettings = false
 
     var body: some View {
         Group {
@@ -16,137 +15,33 @@ struct LevelsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.background)
             } else {
-                List {
-                    Section(header: listHeader) {
-                        ForEach(appState.levels) { level in
-                            NavigationLink(destination: LevelPlayView(level: level)) {
-                                LevelRow(level: level)
-                            }
-                            .disabled(level.isLocked || level.resourceName == nil)
-                            .listRowBackground(Theme.surface.opacity(0.4))
-                            .opacity(level.isLocked ? 0.6 : 1)
-                        }
+        List {
+            Section(header: listHeader) {
+                ForEach(appState.levels) { level in
+                    NavigationLink(destination: LevelPlayView(level: level)) {
+                        LevelRow(level: level)
                     }
+                    .disabled(level.isLocked || level.resourceName == nil)
+                    .listRowBackground(Theme.surface.opacity(0.4))
+                    .opacity(level.isLocked ? 0.6 : 1)
                 }
-                .scrollContentBackground(.hidden)
-                .background(Theme.background)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background)
             }
         }
         .navigationTitle("Levels")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showAudioSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(.white)
-                }
-            }
-        }
         .task {
             await appState.loadLevelProgress()
         }
         .refreshable {
             await appState.loadLevelProgress()
         }
-        .sheet(isPresented: $showAudioSettings) {
-            AudioSettingsSheet()
-                .environmentObject(appState)
-                .presentationDetents([.height(300)])
-                .presentationDragIndicator(.visible)
-        }
     }
 
     private var listHeader: some View {
         EmptyView()
-    }
-}
-
-// MARK: - Audio Settings Sheet
-private struct AudioSettingsSheet: View {
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
-                // Music Toggle
-                HStack {
-                    HStack(spacing: 12) {
-                        Image(systemName: "music.note")
-                            .font(.title2)
-                            .foregroundColor(Theme.accent)
-                            .frame(width: 32)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Music")
-                                .font(.headline)
-                            Text("Background music")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: $appState.musicEnabled)
-                        .labelsHidden()
-                        .tint(Theme.accent)
-                        .onChange(of: appState.musicEnabled) { _, newValue in
-                            AudioManager.shared.isMusicEnabled = newValue
-                        }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
-                
-                // Sound Effects Toggle
-                HStack {
-                    HStack(spacing: 12) {
-                        Image(systemName: "speaker.wave.2")
-                            .font(.title2)
-                            .foregroundColor(Theme.accent)
-                            .frame(width: 32)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Sound Effects")
-                                .font(.headline)
-                            Text("Ball hits and level complete")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: $appState.soundEffectsEnabled)
-                        .labelsHidden()
-                        .tint(Theme.accent)
-                        .onChange(of: appState.soundEffectsEnabled) { _, newValue in
-                            AudioManager.shared.isSoundEnabled = newValue
-                        }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Audio Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -188,9 +83,9 @@ private struct LevelRow: View {
                     .foregroundColor(.white)
                 
                 HStack(spacing: 8) {
-                    Text(level.difficulty)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                Text(level.difficulty)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
                     
                     if let time = formattedTime {
                         Text("•")
