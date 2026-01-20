@@ -43,7 +43,7 @@ struct LeaderboardView: View {
             }
         }
         .background(Theme.background)
-        .navigationTitle("Leaderboard")
+        .navigationTitle("Global Leaderboard")
         .task {
             await appState.loadLeaderboard()
         }
@@ -138,6 +138,14 @@ private struct LeaderboardRow: View {
                         Image(systemName: "creditcard.fill")
                             .font(.caption2)
                         Text("+\(reward)")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(Theme.gold)
+                } else if let coins = entry.coins {
+                    HStack(spacing: 2) {
+                        Image(systemName: "creditcard.fill")
+                            .font(.caption2)
+                        Text("\(coins)")
                             .font(.caption2)
                     }
                     .foregroundColor(Theme.gold)

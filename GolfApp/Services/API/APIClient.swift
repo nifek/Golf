@@ -290,4 +290,9 @@ actor APIClient {
     func getDailyChallengeLeaderboard(limit: Int = 100) async throws -> [DailyChallengeLeaderboardEntry] {
         try await request(endpoint: "/daily-challenge/leaderboard?limit=\(limit)")
     }
+
+    /// Get global leaderboard
+    func getGlobalLeaderboard(limit: Int = 100) async throws -> [GlobalLeaderboardEntryResponse] {
+        try await request(endpoint: "/users/leaderboard?limit=\(limit)")
+    }
 }

@@ -71,6 +71,7 @@ struct LeaderboardEntry: Identifiable, Hashable {
     var stars: Int?
     var bestTimeMs: Int?
     var coinsReward: Int?
+    var coins: Int?
     
     /// Create from Daily Challenge Leaderboard API response
     init(from entry: DailyChallengeLeaderboardEntry) {
@@ -83,6 +84,21 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.stars = entry.stars
         self.bestTimeMs = entry.bestTimeMs
         self.coinsReward = entry.coinsReward
+        self.coins = nil
+    }
+
+    /// Create from Global Leaderboard API response
+    init(from entry: GlobalLeaderboardEntryResponse) {
+        self.id = entry.rank
+        self.rank = entry.rank
+        self.userId = entry.userId
+        self.username = entry.username
+        self.avatarUrl = entry.avatarUrl
+        self.score = entry.globalScore
+        self.stars = nil
+        self.bestTimeMs = nil
+        self.coinsReward = nil
+        self.coins = entry.coins
     }
     
     /// Create locally (for samples)
@@ -96,6 +112,7 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.stars = nil
         self.bestTimeMs = nil
         self.coinsReward = nil
+        self.coins = nil
     }
 }
 

@@ -322,13 +322,13 @@ final class AppState: ObservableObject {
 
     // MARK: - Leaderboard Management
 
-    /// Load today's daily challenge leaderboard
+    /// Load global leaderboard
     func loadLeaderboard() async {
         isLoadingLeaderboard = true
         defer { isLoadingLeaderboard = false }
         
         do {
-            let entries = try await apiClient.getDailyChallengeLeaderboard()
+            let entries = try await apiClient.getGlobalLeaderboard()
             leaderboard = entries.map { LeaderboardEntry(from: $0) }
         } catch {
             lastError = error.localizedDescription

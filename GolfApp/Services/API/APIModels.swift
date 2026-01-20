@@ -151,6 +151,20 @@ struct DailyChallengeLeaderboardEntry: Codable, Equatable, Identifiable {
     var id: Int { rank }
 }
 
+// MARK: - Global Leaderboard
+
+struct GlobalLeaderboardEntryResponse: Codable, Equatable, Identifiable {
+    let rank: Int
+    let userId: Int
+    let username: String
+    let avatarUrl: String?
+    let globalScore: Int
+    let coins: Int
+    let equippedSkin: String
+    
+    var id: Int { rank }
+}
+
 // MARK: - API Error
 
 struct APIErrorResponse: Codable {
