@@ -358,6 +358,8 @@ struct DailyChallengePlayView: View {
     @State private var completedStrokes: Int?
     @State private var attemptResult: DailyChallengeAttemptResponse?
     @State private var isSubmitting = false
+    @State private var showMenuSheet = false
+    @State private var currentStrokes: Int = 0
     
     var body: some View {
         Group {
@@ -369,11 +371,31 @@ struct DailyChallengePlayView: View {
                 gameView(scene)
             }
         }
-        .navigationTitle("Daily Challenge")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(completedStars != nil)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .task {
             await loadLevel()
+        }
+        .onAppear {
+            AudioManager.shared.playMusic(.game)
+        }
+        .onDisappear {
+            AudioManager.shared.playMusic(.menu)
+        }
+        .sheet(isPresented: $showMenuSheet) {
+            DailyChallengeMenuSheet(
+                onRetry: {
+                    showMenuSheet = false
+                    retryChallenge()
+                },
+                onExit: {
+                    showMenuSheet = false
+                    dismiss()
+                }
+            )
+            .environmentObject(appState)
+            .presentationDetents([.height(380)])
+            .presentationDragIndicator(.visible)
         }
     }
     
@@ -415,6 +437,55 @@ struct DailyChallengePlayView: View {
             SpriteView(scene: scene)
                 .ignoresSafeArea(edges: .all)
             
+            if completedStars == nil {
+                VStack {
+                    HStack(alignment: .center, spacing: 12) {
+                        Button {
+                            showMenuSheet = true
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    Circle()
+                                        .fill(Color.black.opacity(0.5))
+                                )
+                        }
+                        
+                        Text("Daily Challenge")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(Color.black.opacity(0.5))
+                            )
+                        
+                        Spacer()
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "figure.golf")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("\(currentStrokes)")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.5))
+                        )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 54)
+                    
+                    Spacer()
+                }
+            }
+            
             if let stars = completedStars {
                 CompletionOverlay(
                     stars: stars,
@@ -425,6 +496,7 @@ struct DailyChallengePlayView: View {
                 )
             }
         }
+        .background(DisableSwipeBackGesture())
     }
     
     private func loadLevel() async {
@@ -450,6 +522,11 @@ struct DailyChallengePlayView: View {
                     await handleCompletion(stars: stars, strokes: gameScene.currentStrokes)
                 }
             }
+            gameScene.onStrokesChanged = { strokes in
+                Task { @MainActor in
+                    currentStrokes = strokes
+                }
+            }
             
             scene = gameScene
             levelDefinition = definition
@@ -459,6 +536,17 @@ struct DailyChallengePlayView: View {
         }
         
         isLoadingLevel = false
+    }
+
+    private func retryChallenge() {
+        scene = nil
+        currentStrokes = 0
+        completedStars = nil
+        completedStrokes = nil
+        attemptResult = nil
+        Task {
+            await loadLevel()
+        }
     }
     
     @MainActor
@@ -552,5 +640,111 @@ private struct CompletionOverlay: View {
             )
             .padding(40)
         }
+    }
+}
+
+// MARK: - Daily Challenge Menu Sheet
+
+private struct DailyChallengeMenuSheet: View {
+    @EnvironmentObject private var appState: AppState
+    let onRetry: () -> Void
+    let onExit: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Daily Challenge")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+                .padding(.top, 8)
+            
+            Text("Paused")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Divider()
+                .padding(.horizontal)
+            
+            HStack(spacing: 16) {
+                Button {
+                    appState.musicEnabled.toggle()
+                    AudioManager.shared.isMusicEnabled = appState.musicEnabled
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: appState.musicEnabled ? "music.note" : "music.note.slash")
+                            .font(.title2)
+                        Text("Music")
+                            .font(.caption)
+                    }
+                    .foregroundColor(appState.musicEnabled ? Theme.accent : .gray)
+                    .frame(width: 70, height: 60)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+                
+                Button {
+                    appState.soundEffectsEnabled.toggle()
+                    AudioManager.shared.isSoundEnabled = appState.soundEffectsEnabled
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: appState.soundEffectsEnabled ? "speaker.wave.2" : "speaker.slash")
+                            .font(.title2)
+                        Text("Sound")
+                            .font(.caption)
+                    }
+                    .foregroundColor(appState.soundEffectsEnabled ? Theme.accent : .gray)
+                    .frame(width: 70, height: 60)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+            }
+            .padding(.vertical, 4)
+            
+            Divider()
+                .padding(.horizontal)
+            
+            VStack(spacing: 12) {
+                Button {
+                    onRetry()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.counterclockwise")
+                        Text("Retry")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Theme.accent)
+                    )
+                }
+                
+                Button {
+                    onExit()
+                } label: {
+                    HStack {
+                        Image(systemName: "xmark.circle")
+                        Text("Exit Challenge")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.red, lineWidth: 2)
+                    )
+                }
+            }
+            .padding(.horizontal, 24)
+            
+            Spacer()
+        }
+        .padding(.top, 16)
     }
 }
