@@ -102,9 +102,7 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.coinsReward = nil
         self.coins = nil
     }
-}
-
-// MARK: - Daily Challenge (for local UI)
+}                 
 
 struct DailyChallenge: Identifiable, Hashable {
     let id: Int
@@ -116,7 +114,6 @@ struct DailyChallenge: Identifiable, Hashable {
     var userAttempts: Int
     var userBestStars: Int?
     
-    /// Create from API response
     init(from response: DailyChallengeResponse) {
         self.id = response.id
         self.challengeDate = response.challengeDate
@@ -129,7 +126,6 @@ struct DailyChallenge: Identifiable, Hashable {
     }
 }
 
-// MARK: - Sample Data
 extension Level {
     static func samples(count: Int = 9) -> [Level] {
         (1...count).map { levelNumber in

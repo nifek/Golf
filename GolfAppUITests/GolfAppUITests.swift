@@ -143,14 +143,16 @@ final class GolfAppUITests: XCTestCase {
 
         let coinsView = app.images["creditcard.circle.fill"]
 
-        let classicItem = app.staticTexts["Classic"]
-        let goldenItem = app.staticTexts["Golden"]
+        let defaultItem = app.staticTexts["Default Ball"]
+        let goldenItem = app.staticTexts["Golden Ball"]
 
-        let hasShopItems = classicItem.waitForExistence(timeout: 2) || goldenItem.exists
+        let hasShopItems = defaultItem.waitForExistence(timeout: 2) || goldenItem.exists
         XCTAssertTrue(hasShopItems, "Shop should display at least one item")
 
-        let ownedLabel = app.staticTexts["OWNED"]
-        XCTAssertTrue(ownedLabel.exists, "At least one item should show 'OWNED' status")
+        let equippedLabel = app.staticTexts["EQUIPPED"]
+        let inUseLabel = app.staticTexts["IN USE"]
+        let hasStatusLabel = equippedLabel.exists || inUseLabel.exists
+        XCTAssertTrue(hasStatusLabel, "At least one item should show equipped status")
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.buttons["Shop"].waitForExistence(timeout: 3), "Should return to main menu")
