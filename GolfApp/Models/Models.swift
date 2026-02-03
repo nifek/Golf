@@ -104,6 +104,32 @@ struct LeaderboardEntry: Identifiable, Hashable {
     }
 }
 
+// MARK: - Daily Challenge (for local UI)
+
+struct DailyChallenge: Identifiable, Hashable {
+    let id: Int
+    var challengeDate: String
+    var fileUrl: String
+    var title: String?
+    var description: String?
+    var totalParticipants: Int
+    var userAttempts: Int
+    var userBestStars: Int?
+    
+    /// Create from API response
+    init(from response: DailyChallengeResponse) {
+        self.id = response.id
+        self.challengeDate = response.challengeDate
+        self.fileUrl = response.fileUrl
+        self.title = response.title
+        self.description = response.description
+        self.totalParticipants = response.totalParticipants
+        self.userAttempts = response.userAttempts
+        self.userBestStars = response.userBestStars
+    }
+}
+
+// MARK: - Sample Data
 extension Level {
     static func samples(count: Int = 9) -> [Level] {
         (1...count).map { levelNumber in
