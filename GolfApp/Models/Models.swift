@@ -102,6 +102,28 @@ struct LeaderboardEntry: Identifiable, Hashable {
         self.coinsReward = nil
         self.coins = nil
     }
+}                 
+
+struct DailyChallenge: Identifiable, Hashable {
+    let id: Int
+    var challengeDate: String
+    var fileUrl: String
+    var title: String?
+    var description: String?
+    var totalParticipants: Int
+    var userAttempts: Int
+    var userBestStars: Int?
+    
+    init(from response: DailyChallengeResponse) {
+        self.id = response.id
+        self.challengeDate = response.challengeDate
+        self.fileUrl = response.fileUrl
+        self.title = response.title
+        self.description = response.description
+        self.totalParticipants = response.totalParticipants
+        self.userAttempts = response.userAttempts
+        self.userBestStars = response.userBestStars
+    }
 }
 
 extension Level {
